@@ -1,5 +1,5 @@
 import { 
-  collection, doc, setDoc, getDoc, getDocs, updateDoc, 
+  collection, doc, setDoc, getDoc, getDocs, updateDoc, deleteDoc,
   query, where, orderBy, onSnapshot, serverTimestamp, arrayUnion,
   addDoc
 } from 'firebase/firestore';
@@ -254,4 +254,92 @@ export async function startDirectMessage(
   
   await setDoc(newRoomRef, newRoomData);
   return newRoomData;
+}
+
+/**
+ * Create a new pending private DM room and generate a code
+ */
+export async function createPrivateDmRoom(creatorUid: string, creatorName: string): Promise<Room> {
+  const inviteCode = generateInviteCode();
+  const roomRef = doc(collection(db, 'rooms'));
+  
+  const roomData: Room = {
+    id: roomRef.id,
+    name: 'Private Chat',
+    type: 'dm',
+    inviteCode,
+    members: [creatorUid],
+    createdAt: serverTimestamp(),
+    dmUserNames: {
+      [creatorUid]: creatorName
+    }
+  };
+  
+  await setDoc(roomRef, roomData);
+  
+  // Create mapping for lookup
+  await setDoc(doc(db, 'room_codes', inviteCode), {
+    roomId: roomRef.id
+  });
+  
+  return roomData;
+}
+
+/**
+ * Join a pending private DM room using the code, lock it, and close the invite code
+ */
+export async function joinPrivateDmRoom(code: string, joinerUid: string, joinerName: string): Promise<Room> {
+  const normalizedCode = code.trim().toUpperCase();
+  
+  // 1. Find room ID by code
+  const codeDocRef = doc(db, 'room_codes', normalizedCode);
+  const codeDoc = await getDoc(codeDocRef);
+  if (!codeDoc.exists()) {
+    throw new Error('Invalid invite code');
+  }
+  
+  const roomId = codeDoc.data().roomId;
+  const roomRef = doc(db, 'rooms', roomId);
+  const roomSnap = await getDoc(roomRef);
+  
+  if (!roomSnap.exists()) {
+    throw new Error('Room not found');
+  }
+  
+  const roomData = roomSnap.data() as Room;
+  
+  if (roomData.type !== 'dm') {
+    throw new Error('This code is not for a private 1-on-1 chat');
+  }
+  
+  if (roomData.members.includes(joinerUid)) {
+    return roomData; // Already a member
+  }
+  
+  if (roomData.members.length >= 2) {
+    throw new Error('This private chat is already full with two participants!');
+  }
+  
+  // 2. Add joiner, update usernames map
+  const updatedNames = {
+    ...(roomData.dmUserNames || {}),
+    [joinerUid]: joinerName
+  };
+  
+  await updateDoc(roomRef, {
+    members: arrayUnion(joinerUid),
+    inviteCode: null, // Clear inviteCode inside the room doc
+    dmUserNames: updatedNames
+  });
+  
+  // 3. Delete the invite code lookup so it can never be used again
+  await deleteDoc(codeDocRef);
+  
+  // Return updated object
+  return {
+    ...roomData,
+    members: [...roomData.members, joinerUid],
+    inviteCode: null,
+    dmUserNames: updatedNames
+  };
 }

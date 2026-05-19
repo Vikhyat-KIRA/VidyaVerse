@@ -6,7 +6,8 @@ import { Users, Hash, Plus, Key, Send, Loader2, Sparkles, ShieldCheck, MessageSq
 import { getUserProfile, UserProfile } from '@/lib/firebase';
 import {
   Room, ChatMessage, getUserRooms, createCustomRoom,
-  joinRoomByCode, subscribeToMessages, sendMessage, startDirectMessage
+  joinRoomByCode, subscribeToMessages, sendMessage, startDirectMessage,
+  createPrivateDmRoom, joinPrivateDmRoom
 } from '@/lib/chat';
 import { getUserTitle, getLeaderboard } from '@/lib/exp';
 import { FocusSession, subscribeToFocusSessions } from '@/lib/focus';
@@ -31,8 +32,8 @@ export default function CommunityPanel({ userUid, userName }: CommunityPanelProp
   const [newRoomName, setNewRoomName] = useState('');
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState('');
-  const [showDmModal, setShowDmModal] = useState(false);
-  const [dmEmail, setDmEmail] = useState('');
+  const [showJoinDmModal, setShowJoinDmModal] = useState(false);
+  const [dmJoinCode, setDmJoinCode] = useState('');
 
   const [activeTab, setActiveTab] = useState<'guilds' | 'dms' | 'focus' | 'leaderboards'>('guilds');
   const [focusSessions, setFocusSessions] = useState<FocusSession[]>([]);
@@ -139,33 +140,53 @@ export default function CommunityPanel({ userUid, userName }: CommunityPanelProp
     }
   };
 
-  const handleStartDm = async () => {
-    if (!dmEmail.trim()) return;
+  const handleCreateDmRoom = async () => {
+    setModalLoading(true);
+    try {
+      const room = await createPrivateDmRoom(userUid, userName);
+      setRooms(prev => [...prev, room]);
+      setActiveRoom(room);
+      setShowMobileChat(true);
+    } catch (err) {
+      console.error('Failed to create private DM:', err);
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  const handleJoinDmRoom = async () => {
+    if (!dmJoinCode.trim()) return;
     setModalLoading(true);
     setModalError('');
     try {
-      const room = await startDirectMessage(userUid, userName, dmEmail);
-      // Check if already in list
-      if (!rooms.find(r => r.id === room.id)) {
-        setRooms([...rooms, room]);
-      }
+      const room = await joinPrivateDmRoom(dmJoinCode, userUid, userName);
+      // Remove any pending room with the same id and add the fully-joined room
+      setRooms(prev => {
+        const filtered = prev.filter(r => r.id !== room.id);
+        return [...filtered, room];
+      });
       setActiveRoom(room);
-      setShowDmModal(false);
-      setDmEmail('');
+      setShowJoinDmModal(false);
+      setDmJoinCode('');
       setShowMobileChat(true);
     } catch (err) {
       const error = err as { message?: string };
-      setModalError(error.message || 'Failed to start DM');
+      setModalError(error.message || 'Failed to join private DM');
     } finally {
       setModalLoading(false);
     }
   };
 
   const getRoomDisplayName = (room: Room) => {
-    if (room.type === 'dm' && room.dmUserNames) {
-      const otherUid = room.members.find(uid => uid !== userUid);
-      if (otherUid && room.dmUserNames[otherUid]) {
-        return room.dmUserNames[otherUid];
+    if (room.type === 'dm') {
+      if (room.members.length === 1) {
+        return `Pending DM (${room.inviteCode || 'Created'})`;
+      }
+      if (room.dmUserNames) {
+        const otherUid = room.members.find(uid => uid !== userUid);
+        if (otherUid && room.dmUserNames[otherUid]) {
+          return room.dmUserNames[otherUid];
+        }
       }
     }
     return room.name;
@@ -277,13 +298,26 @@ export default function CommunityPanel({ userUid, userName }: CommunityPanelProp
 
         {activeTab === 'dms' && (
           <>
-            {/* Start DM Action Button */}
-            <button
-              onClick={() => setShowDmModal(true)}
-              className="btn-primary w-full text-xs flex items-center justify-center gap-1.5 py-2 px-0"
-            >
-              <Plus size={14} /> Start Private DM
-            </button>
+            {/* DM Action Buttons */}
+            <div className="flex gap-2 flex-shrink-0">
+              <button
+                onClick={handleCreateDmRoom}
+                className="btn-primary flex-1 text-[10px] py-2 flex items-center justify-center gap-1 border-none cursor-pointer"
+                title="Create a new private chat room code"
+              >
+                <Plus size={11} /> Create Chat
+              </button>
+              <button
+                onClick={() => {
+                  setModalError('');
+                  setShowJoinDmModal(true);
+                }}
+                className="btn-ghost flex-1 text-[10px] py-2 flex items-center justify-center gap-1 border border-[var(--border-color)] cursor-pointer"
+                title="Enter your friend's private code to join"
+              >
+                <Key size={11} /> Enter Code
+              </button>
+            </div>
 
             {/* DMs List */}
             <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
@@ -292,7 +326,7 @@ export default function CommunityPanel({ userUid, userName }: CommunityPanelProp
                   <User size={28} className="text-[var(--primary)] mb-2" />
                   <h4 className="text-xs font-bold text-[var(--foreground)]">Direct Messages</h4>
                   <p className="text-[9px] text-[var(--muted)] mt-1">
-                    Connect 1-on-1 privately with any classmate by entering their registered email! 🔒
+                    No private chats yet. Tap 'Create Chat' to generate a special code, or 'Enter Code' to join a friend's private chat! 🔒
                   </p>
                 </div>
               ) : (
@@ -316,7 +350,9 @@ export default function CommunityPanel({ userUid, userName }: CommunityPanelProp
                     </div>
                     <div className="flex-1 overflow-hidden">
                       <p className="text-sm font-semibold truncate text-[var(--foreground)]">{getRoomDisplayName(room)}</p>
-                      <p className="text-[10px] text-[var(--muted)]">Private Chat</p>
+                      <p className="text-[10px] text-[var(--muted)]">
+                        {room.members.length === 1 ? 'Waiting for Friend...' : 'Private Chat'}
+                      </p>
                     </div>
                   </button>
                 ))
@@ -383,11 +419,25 @@ export default function CommunityPanel({ userUid, userName }: CommunityPanelProp
 
               {/* Messages */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
-                {messages.length === 0 ? (
-                  <div className="h-full flex flex-col items-center justify-center text-[var(--muted)] opacity-50">
-                    <MessageSquare size={48} className="mb-2" />
-                    <p className="text-sm">No messages yet. Be the first to say hi!</p>
+                {activeRoom.type === 'dm' && activeRoom.members.length === 1 && (
+                  <div className="p-4 rounded-xl border border-dashed border-[var(--primary)] bg-[var(--primary)]/5 text-center space-y-2 mb-4 flex-shrink-0">
+                    <Key className="mx-auto text-[var(--primary)] animate-bounce" size={24} />
+                    <h4 className="text-sm font-bold text-[var(--foreground)]">Private 1-on-1 Chat Created!</h4>
+                    <p className="text-xs text-[var(--muted)] max-w-sm mx-auto leading-relaxed">
+                      Give this special invite code to your friend. Once they enter it, they will instantly join and this room will lock into your private DM!
+                    </p>
+                    <div className="inline-flex items-center gap-2 bg-[var(--surface)] border border-[var(--border-color)] px-4 py-1.5 rounded-lg font-mono text-base font-bold text-[var(--primary)] tracking-wider">
+                      {activeRoom.inviteCode}
+                    </div>
                   </div>
+                )}
+                {messages.length === 0 ? (
+                  activeRoom.type === 'dm' && activeRoom.members.length === 1 ? null : (
+                    <div className="h-full flex flex-col items-center justify-center text-[var(--muted)] opacity-50">
+                      <MessageSquare size={48} className="mb-2" />
+                      <p className="text-sm">No messages yet. Be the first to say hi!</p>
+                    </div>
+                  )
                 ) : (
                   messages.map((msg, idx) => {
                     const isMe = msg.senderId === userUid;
@@ -630,27 +680,28 @@ export default function CommunityPanel({ userUid, userName }: CommunityPanelProp
         )}
 
         {/* Start DM Modal */}
-        {showDmModal && (
+        {showJoinDmModal && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
             style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(5px)' }}
           >
             <div className="glass-strong rounded-2xl p-6 w-full max-w-sm">
-              <h3 className="text-lg font-bold mb-1">Start Private DM</h3>
-              <p className="text-xs text-[var(--muted)] mb-4">Enter your friend's registered VidyaVerse email to connect directly. 🔒</p>
+              <h3 className="text-lg font-bold mb-1">Join Private DM</h3>
+              <p className="text-xs text-[var(--muted)] mb-4">Enter your friend's 6-character private chat code to join. 🔒</p>
               {modalError && <p className="text-red-400 text-xs mb-3">{modalError}</p>}
               <input
-                type="email"
-                placeholder="e.g. emily@gmail.com"
-                value={dmEmail}
-                onChange={e => setDmEmail(e.target.value)}
-                className="input-glass w-full mb-4"
+                type="text"
+                placeholder="Enter 6-character code"
+                value={dmJoinCode}
+                onChange={e => setDmJoinCode(e.target.value.toUpperCase())}
+                maxLength={6}
+                className="input-glass w-full mb-4 font-mono uppercase tracking-widest text-center text-lg"
               />
               <div className="flex gap-2">
-                <button onClick={() => setShowDmModal(false)} className="btn-ghost flex-1">Cancel</button>
-                <button onClick={handleStartDm} disabled={modalLoading || !dmEmail.trim()} className="btn-primary flex-1">
-                  {modalLoading ? 'Connecting...' : 'Connect'}
+                <button onClick={() => setShowJoinDmModal(false)} className="btn-ghost flex-1">Cancel</button>
+                <button onClick={handleJoinDmRoom} disabled={modalLoading || dmJoinCode.length < 6} className="btn-primary flex-1">
+                  {modalLoading ? 'Joining...' : 'Join'}
                 </button>
               </div>
             </div>
