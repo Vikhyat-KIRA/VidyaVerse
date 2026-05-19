@@ -1,0 +1,184 @@
+import { 
+  collection, doc, setDoc, getDoc, getDocs, updateDoc, 
+  query, where, orderBy, onSnapshot, serverTimestamp, arrayUnion,
+  addDoc
+} from 'firebase/firestore';
+import { db, UserProfile } from './firebase';
+
+export interface Room {
+  id: string;
+  name: string;
+  type: 'auto' | 'custom';
+  inviteCode: string | null;
+  members: string[]; // for custom rooms
+  createdAt?: unknown;
+}
+
+export interface ChatMessage {
+  id: string;
+  text: string;
+  senderId: string;
+  senderName: string;
+  timestamp: unknown;
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+// Generate a random 6-character alphanumeric code
+function generateInviteCode(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  for (let i = 0; i < 6; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
+// Ensure auto rooms exist for a user
+export async function ensureAutoRooms(profile: UserProfile): Promise<Room[]> {
+  const roomsToReturn: Room[] = [];
+
+  const autoRoomDefs = [
+    { id: `board_${profile.board.replace(/\s+/g, '').toLowerCase()}`, name: `#${profile.board} Warriors` },
+    { id: `class_${profile.class.replace(/\s+/g, '').toLowerCase()}`, name: `#Class ${profile.class} Squad` },
+  ];
+
+  for (const def of autoRoomDefs) {
+    if (!profile.board && def.id.startsWith('board_')) continue;
+    if (!profile.class && def.id.startsWith('class_')) continue;
+
+    const roomRef = doc(db, 'rooms', def.id);
+    const roomSnap = await getDoc(roomRef);
+
+    if (!roomSnap.exists()) {
+      const roomData: Room = {
+        id: def.id,
+        name: def.name,
+        type: 'auto',
+        inviteCode: null,
+        members: [], // Auto rooms don't need explicit members, access is based on profile
+        createdAt: serverTimestamp(),
+      };
+      await setDoc(roomRef, roomData);
+      roomsToReturn.push(roomData);
+    } else {
+      roomsToReturn.push(roomSnap.data() as Room);
+    }
+  }
+
+  return roomsToReturn;
+}
+
+// ─── Core Functions ──────────────────────────────────────────────────────────
+
+/**
+ * Fetch all rooms a user has access to (Auto + Custom)
+ */
+export async function getUserRooms(uid: string, profile: UserProfile | null): Promise<Room[]> {
+  let allRooms: Room[] = [];
+
+  // 1. Get Auto Rooms (Implicit access based on profile)
+  if (profile) {
+    const autoRooms = await ensureAutoRooms(profile);
+    allRooms = [...allRooms, ...autoRooms];
+  }
+
+  // 2. Get Custom Rooms (Explicit access via members array)
+  const q = query(collection(db, 'rooms'), where('members', 'array-contains', uid));
+  const customRoomsSnap = await getDocs(q);
+  customRoomsSnap.forEach((doc) => {
+    allRooms.push(doc.data() as Room);
+  });
+
+  return allRooms;
+}
+
+/**
+ * Create a new custom room and generate an invite code
+ */
+export async function createCustomRoom(name: string, creatorUid: string): Promise<Room> {
+  const inviteCode = generateInviteCode();
+  
+  // 1. Create the room
+  const roomRef = doc(collection(db, 'rooms')); // Auto-ID
+  const roomData: Room = {
+    id: roomRef.id,
+    name,
+    type: 'custom',
+    inviteCode,
+    members: [creatorUid],
+    createdAt: serverTimestamp(),
+  };
+  await setDoc(roomRef, roomData);
+
+  // 2. Create the mapping document for fast code lookup
+  await setDoc(doc(db, 'room_codes', inviteCode), {
+    roomId: roomRef.id,
+  });
+
+  return roomData;
+}
+
+/**
+ * Join a custom room using a 6-character code
+ */
+export async function joinRoomByCode(code: string, uid: string): Promise<Room> {
+  const normalizedCode = code.trim().toUpperCase();
+  
+  // 1. Look up the room ID by code
+  const codeDoc = await getDoc(doc(db, 'room_codes', normalizedCode));
+  if (!codeDoc.exists()) {
+    throw new Error('Invalid invite code');
+  }
+
+  const roomId = codeDoc.data().roomId;
+
+  // 2. Add the user to the room's members array
+  const roomRef = doc(db, 'rooms', roomId);
+  const roomSnap = await getDoc(roomRef);
+  if (!roomSnap.exists()) {
+    throw new Error('Room not found');
+  }
+
+  await updateDoc(roomRef, {
+    members: arrayUnion(uid)
+  });
+
+  return roomSnap.data() as Room;
+}
+
+/**
+ * Send a message to a room
+ */
+export async function sendMessage(roomId: string, text: string, senderId: string, senderName: string): Promise<void> {
+  const messagesRef = collection(db, 'rooms', roomId, 'messages');
+  await addDoc(messagesRef, {
+    text,
+    senderId,
+    senderName,
+    timestamp: serverTimestamp(),
+  });
+}
+
+/**
+ * Subscribe to messages in a room
+ */
+export function subscribeToMessages(roomId: string, callback: (messages: ChatMessage[]) => void) {
+  const messagesRef = collection(db, 'rooms', roomId, 'messages');
+  const q = query(messagesRef, orderBy('timestamp', 'asc'));
+
+  return onSnapshot(q, (snapshot) => {
+    const messages: ChatMessage[] = [];
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      messages.push({
+        id: doc.id,
+        text: data.text,
+        senderId: data.senderId,
+        senderName: data.senderName,
+        timestamp: data.timestamp,
+      });
+    });
+    callback(messages);
+  });
+}
