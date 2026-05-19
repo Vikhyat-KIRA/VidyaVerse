@@ -12,10 +12,8 @@ import AuthScreen from '@/components/AuthScreen';
 import FlashcardsPanel from '@/components/FlashcardsPanel';
 import BossBattlePanel from '@/components/BossBattlePanel';
 import LandingPage from '@/components/LandingPage';
-import CustomizerPanel from '@/components/CustomizerPanel';
 import { onAuthStateChanged, signOut, getUserProfile, type AppUser } from '@/lib/firebase';
 import { getUserFromSheet } from '@/actions/sheets';
-import { Palette } from 'lucide-react';
 
 type AppView = 'landing' | 'auth' | 'dashboard';
 
@@ -29,7 +27,6 @@ export default function DashboardPage() {
   const [userXp, setUserXp] = useState(0);
   const [userStreak, setUserStreak] = useState(0);
   const [appView, setAppView] = useState<AppView>('landing');
-  const [customizerOpen, setCustomizerOpen] = useState(false);
 
   // Auth state listener
   useEffect(() => {
@@ -259,24 +256,6 @@ export default function DashboardPage() {
         </div>
       </main>
 
-      {/* Floating Customizer Toggle (Dashboard) */}
-      <motion.button
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
-        onClick={() => setCustomizerOpen(true)}
-        className="fixed bottom-24 md:bottom-6 right-4 md:right-6 z-50 w-11 h-11 rounded-full flex items-center justify-center shadow-lg"
-        style={{
-          background: 'linear-gradient(135deg, var(--primary), var(--accent))',
-          border: 'none',
-          cursor: 'pointer',
-        }}
-        aria-label="Customize theme"
-      >
-        <Palette size={18} color="white" />
-      </motion.button>
-
-      {/* Customizer Panel */}
-      <CustomizerPanel isOpen={customizerOpen} onClose={() => setCustomizerOpen(false)} />
     </div>
   );
 }

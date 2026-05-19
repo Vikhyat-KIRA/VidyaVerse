@@ -274,28 +274,49 @@ Return ONLY a JSON array of objects, where each object has "question" and "answe
 }
 
 /**
- * Generate a Daily Boss Challenge based on user's aim
+ * Generate a Daily Boss Challenge based on user's topic, class, and optional image
  */
-export async function generateDailyBossChallenge(uid: string): Promise<string> {
+export async function generateDailyBossChallenge(uid: string, topic: string, studentClass?: string, imageBase64?: string): Promise<string> {
   try {
     const aim = await getUserAim(uid);
     const vaultContext = await getVaultContext(uid);
     const genAI = getGenAI();
     const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
 
-    const prompt = `You are VAYU. Generate a highly challenging daily academic "Boss Battle" question for a student whose life aim is to become a: ${aim}.
-    
+    const classInfo = studentClass ? `The student is in Class ${studentClass}.` : '';
+
+    const prompt = `You are VAYU. Generate a highly challenging academic "Boss Battle" question for a student.
+
+STUDENT INFO:
+- Life aim: ${aim}
+- ${classInfo}
+- Topic/Subject requested: ${topic}
+
 STUDENT VAULT CONTEXT:
 ${vaultContext || 'None'}
 
-Create a difficult, scenario-based conceptual question that requires critical thinking to solve. Keep it realistic but hardcore. 
+${imageBase64 ? 'An image has been attached — use it as reference material for the challenge question. Base the question on what you see in the image.' : ''}
+
+Create a difficult, scenario-based conceptual question that requires critical thinking to solve. The question MUST be about the topic "${topic}" and appropriate for ${studentClass ? `Class ${studentClass}` : 'the student\'s level'}.
 The scenario should start with VAYU challenging them dramatically: "⚔️ BOSS BATTLE: [Scenario & Question]". Keep it to 3-4 sentences maximum.`;
 
-    const result = await model.generateContent(prompt);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const parts: any[] = [{ text: prompt }];
+
+    if (imageBase64) {
+      parts.push({
+        inlineData: {
+          data: imageBase64,
+          mimeType: 'image/jpeg'
+        }
+      });
+    }
+
+    const result = await model.generateContent(parts);
     return result.response.text();
   } catch (error) {
     console.error('Error generating challenge:', error);
-    return `⚔️ BOSS BATTLE: Explain how you would optimize database read queries for a high-traffic app with millions of real-time active users.`;
+    return `⚔️ BOSS BATTLE: Based on the topic "${topic}" — Explain the fundamental concepts and how they apply in a real-world scenario that would challenge even the best students.`;
   }
 }
 
