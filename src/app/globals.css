@@ -32,6 +32,10 @@
   --muted: #7a7f8a;
   --danger: #ff4d6a;
   --success: #34d399;
+  /* Customizer dynamic tokens */
+  --radius: 16px;
+  --glass-blur: 20px;
+  --glass-opacity: 0.04;
 }
 
 /* ========== LIGHT MODE ========== */
@@ -65,7 +69,6 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow: hidden;
   min-height: 100vh;
 }
 
@@ -102,10 +105,10 @@ body {
 
 .glass-card {
   background: var(--surface);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(180%);
   border: 1px solid var(--border-color);
-  border-radius: 16px;
+  border-radius: var(--radius);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -209,7 +212,7 @@ body {
   background: linear-gradient(135deg, var(--primary), #8b5cf6);
   color: white;
   padding: 10px 24px;
-  border-radius: 12px;
+  border-radius: calc(var(--radius) * 0.75);
   font-weight: 600;
   font-size: 14px;
   border: none;
@@ -230,7 +233,7 @@ body {
   background: transparent;
   color: var(--foreground);
   padding: 10px 24px;
-  border-radius: 12px;
+  border-radius: calc(var(--radius) * 0.75);
   font-weight: 500;
   font-size: 14px;
   border: 1px solid var(--border-color);
@@ -246,7 +249,7 @@ body {
 .input-glass {
   background: var(--surface);
   border: 1px solid var(--border-color);
-  border-radius: 12px;
+  border-radius: calc(var(--radius) * 0.75);
   padding: 12px 16px;
   color: var(--foreground);
   font-size: 14px;
@@ -268,7 +271,7 @@ body {
 /* ========== DRAG & DROP ZONE ========== */
 .drop-zone {
   border: 2px dashed var(--border-color);
-  border-radius: 16px;
+  border-radius: var(--radius);
   padding: 40px;
   text-align: center;
   cursor: pointer;
@@ -304,4 +307,12 @@ body {
   .mobile-nav {
     display: none;
   }
+}
+
+/* ========== LOGO THEME INVERSION ========== */
+.logo-invert {
+  filter: invert(1);
+}
+.light .logo-invert {
+  filter: invert(0);
 }

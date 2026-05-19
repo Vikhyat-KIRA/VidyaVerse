@@ -11,8 +11,13 @@ import SettingsPanel from '@/components/SettingsPanel';
 import AuthScreen from '@/components/AuthScreen';
 import FlashcardsPanel from '@/components/FlashcardsPanel';
 import BossBattlePanel from '@/components/BossBattlePanel';
+import LandingPage from '@/components/LandingPage';
+import CustomizerPanel from '@/components/CustomizerPanel';
 import { onAuthStateChanged, signOut, getUserProfile, type AppUser } from '@/lib/firebase';
 import { getUserFromSheet } from '@/actions/sheets';
+import { Palette } from 'lucide-react';
+
+type AppView = 'landing' | 'auth' | 'dashboard';
 
 export default function DashboardPage() {
   const [user, setUser] = useState<AppUser | null>(null);
@@ -23,6 +28,8 @@ export default function DashboardPage() {
   const [userAim, setUserAim] = useState('Become the best version of yourself');
   const [userXp, setUserXp] = useState(0);
   const [userStreak, setUserStreak] = useState(0);
+  const [appView, setAppView] = useState<AppView>('landing');
+  const [customizerOpen, setCustomizerOpen] = useState(false);
 
   // Auth state listener
   useEffect(() => {
@@ -31,6 +38,7 @@ export default function DashboardPage() {
       setAuthChecked(true);
 
       if (firebaseUser) {
+        setAppView('dashboard');
         // Load user profile data from Firestore
         getUserProfile(firebaseUser.uid).then(profile => {
           if (profile) {
@@ -66,6 +74,7 @@ export default function DashboardPage() {
     await signOut();
     setUser(null);
     setActivePanel('chat');
+    setAppView('landing');
   };
 
   // Loading state
@@ -86,12 +95,36 @@ export default function DashboardPage() {
     );
   }
 
-  // Auth screen
-  if (!user) {
-    return <AuthScreen onAuthSuccess={() => { }} />;
+  // Landing page (unauthenticated, initial view)
+  if (appView === 'landing' && !user) {
+    return <LandingPage onEnterApp={() => setAppView('auth')} />;
   }
 
-  // Dashboard
+  // Auth screen (user clicked "Launch App" from landing)
+  if (appView === 'auth' && !user) {
+    return (
+      <div className="relative">
+        {/* Back to landing button */}
+        <motion.button
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          onClick={() => setAppView('landing')}
+          className="fixed top-4 left-4 z-50 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-105"
+          style={{
+            background: 'rgba(255,255,255,0.05)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            color: 'var(--muted)',
+            cursor: 'pointer',
+          }}
+        >
+          ← Back
+        </motion.button>
+        <AuthScreen onAuthSuccess={() => { }} />
+      </div>
+    );
+  }
+
+  // Dashboard (authenticated)
   return (
     <div className="h-screen flex bg-grain" style={{ background: 'var(--background)' }}>
       {/* Ambient background effects */}
@@ -141,7 +174,7 @@ export default function DashboardPage() {
                 transition={{ duration: 0.25 }}
                 className="h-full glass-card rounded-none md:rounded-[24px] border-x-0 md:border-x border-t-0 md:border-t p-3.5 md:p-6"
               >
-                <ChatPanel userUid={user.uid} userName={userName} />
+                <ChatPanel userUid={user!.uid} userName={userName} />
               </motion.div>
             )}
 
@@ -154,7 +187,7 @@ export default function DashboardPage() {
                 transition={{ duration: 0.25 }}
                 className="h-full glass-card rounded-none md:rounded-[24px] border-x-0 md:border-x border-t-0 md:border-t p-3.5 md:p-6"
               >
-                <CommunityPanel userUid={user.uid} userName={userName} />
+                <CommunityPanel userUid={user!.uid} userName={userName} />
               </motion.div>
             )}
 
@@ -167,7 +200,7 @@ export default function DashboardPage() {
                 transition={{ duration: 0.25 }}
                 className="h-full glass-card rounded-none md:rounded-[24px] border-x-0 md:border-x border-t-0 md:border-t p-3.5 md:p-6"
               >
-                <FlashForge userUid={user.uid} />
+                <FlashForge userUid={user!.uid} />
               </motion.div>
             )}
 
@@ -180,7 +213,7 @@ export default function DashboardPage() {
                 transition={{ duration: 0.25 }}
                 className="h-full glass-card rounded-none md:rounded-[24px] border-x-0 md:border-x border-t-0 md:border-t p-3.5 md:p-6"
               >
-                <PomodoroCoach userUid={user.uid} userName={userName} userAim={userAim} />
+                <PomodoroCoach userUid={user!.uid} userName={userName} userAim={userAim} />
               </motion.div>
             )}
 
@@ -193,7 +226,7 @@ export default function DashboardPage() {
                 transition={{ duration: 0.25 }}
                 className="h-full glass-card rounded-none md:rounded-[24px] border-x-0 md:border-x border-t-0 md:border-t p-3.5 md:p-6"
               >
-                <FlashcardsPanel userUid={user.uid} />
+                <FlashcardsPanel userUid={user!.uid} />
               </motion.div>
             )}
 
@@ -206,7 +239,7 @@ export default function DashboardPage() {
                 transition={{ duration: 0.25 }}
                 className="h-full glass-card rounded-none md:rounded-[24px] border-x-0 md:border-x border-t-0 md:border-t p-3.5 md:p-6"
               >
-                <BossBattlePanel userUid={user.uid} />
+                <BossBattlePanel userUid={user!.uid} />
               </motion.div>
             )}
 
@@ -219,12 +252,32 @@ export default function DashboardPage() {
                 transition={{ duration: 0.25 }}
                 className="h-full glass-card rounded-none md:rounded-[24px] border-x-0 md:border-x border-t-0 md:border-t p-3.5 md:p-6"
               >
-                <SettingsPanel userUid={user.uid} />
+                <SettingsPanel userUid={user!.uid} />
               </motion.div>
             )}
           </AnimatePresence>
         </div>
       </main>
+
+      {/* Floating Customizer Toggle (Dashboard) */}
+      <motion.button
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+        onClick={() => setCustomizerOpen(true)}
+        className="fixed bottom-24 md:bottom-6 right-4 md:right-6 z-50 w-11 h-11 rounded-full flex items-center justify-center shadow-lg"
+        style={{
+          background: 'linear-gradient(135deg, var(--primary), var(--accent))',
+          border: 'none',
+          cursor: 'pointer',
+        }}
+        aria-label="Customize theme"
+      >
+        <Palette size={18} color="white" />
+      </motion.button>
+
+      {/* Customizer Panel */}
+      <CustomizerPanel isOpen={customizerOpen} onClose={() => setCustomizerOpen(false)} />
     </div>
   );
 }
+
