@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Hash, Plus, Key, Send, Loader2, Sparkles, ShieldCheck, MessageSquare, Trophy, Activity } from 'lucide-react';
+import { Users, Hash, Plus, Key, Send, Loader2, Sparkles, ShieldCheck, MessageSquare, Trophy, Activity, ChevronLeft } from 'lucide-react';
 import { getUserProfile, UserProfile } from '@/lib/firebase';
 import {
   Room, ChatMessage, getUserRooms, createCustomRoom,
@@ -27,6 +27,7 @@ export default function CommunityPanel({ userUid, userName }: CommunityPanelProp
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [joinCode, setJoinCode] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showMobileChat, setShowMobileChat] = useState(false);
   const [newRoomName, setNewRoomName] = useState('');
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState('');
@@ -136,6 +137,8 @@ export default function CommunityPanel({ userUid, userName }: CommunityPanelProp
     }
   };
 
+  const isMainActiveOnMobile = showMobileChat || activeTab !== 'guilds';
+
   if (loading) {
     return (
       <div className="h-full flex items-center justify-center">
@@ -145,9 +148,9 @@ export default function CommunityPanel({ userUid, userName }: CommunityPanelProp
   }
 
   return (
-    <div className="h-full flex flex-col md:flex-row gap-4 relative">
+    <div className="h-full flex flex-col md:flex-row gap-4 relative overflow-hidden">
       {/* Sidebar: Navigation & Lists */}
-      <div className="w-full md:w-64 flex-shrink-0 flex flex-col gap-4">
+      <div className={`w-full md:w-64 flex-shrink-0 flex flex-col gap-4 h-full ${isMainActiveOnMobile ? 'hidden md:flex' : 'flex'}`}>
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-bold flex items-center gap-2">
             <Users className="text-[var(--primary)]" />
@@ -203,7 +206,10 @@ export default function CommunityPanel({ userUid, userName }: CommunityPanelProp
               {rooms.map(room => (
                 <button
                   key={room.id}
-                  onClick={() => setActiveRoom(room)}
+                  onClick={() => {
+                    setActiveRoom(room);
+                    setShowMobileChat(true);
+                  }}
                   className="w-full text-left p-3 rounded-xl transition-all flex items-center gap-3 group"
                   style={{
                     background: activeRoom?.id === room.id ? 'rgba(108, 99, 255, 0.15)' : 'rgba(255, 255, 255, 0.02)',
@@ -250,22 +256,30 @@ export default function CommunityPanel({ userUid, userName }: CommunityPanelProp
       </div>
 
       {/* Main Panel Content Area */}
-      <div className="flex-1 flex flex-col min-w-0" style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
+      <div className={`flex-1 flex flex-col min-w-0 h-full ${!isMainActiveOnMobile ? 'hidden md:flex' : 'flex'}`} style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
         {activeTab === 'guilds' ? (
           activeRoom ? (
             <>
               {/* Header */}
               <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: 'var(--border-color)' }}>
-                <div>
-                  <h3 className="font-bold flex items-center gap-2">
-                    {activeRoom.name}
-                    {activeRoom.type === 'auto' && <Sparkles size={14} className="text-[var(--primary)]" />}
-                  </h3>
-                  <p className="text-xs text-[var(--muted)]">
-                    {activeRoom.type === 'auto'
-                      ? 'Everyone with your profile is here automatically.'
-                      : `Invite your friends with code: ${activeRoom.inviteCode}`}
-                  </p>
+                <div className="flex items-center gap-2 min-w-0">
+                  <button
+                    onClick={() => setShowMobileChat(false)}
+                    className="md:hidden p-2 -ml-2 text-[var(--primary)] hover:bg-white/5 rounded-xl transition-colors cursor-pointer border-none bg-transparent flex-shrink-0"
+                  >
+                    <ChevronLeft size={20} />
+                  </button>
+                  <div className="min-w-0">
+                    <h3 className="font-bold flex items-center gap-2 truncate">
+                      {activeRoom.name}
+                      {activeRoom.type === 'auto' && <Sparkles size={14} className="text-[var(--primary)]" />}
+                    </h3>
+                    <p className="text-xs text-[var(--muted)] truncate">
+                      {activeRoom.type === 'auto'
+                        ? 'Everyone with your profile is here automatically.'
+                        : `Invite your friends with code: ${activeRoom.inviteCode}`}
+                    </p>
+                  </div>
                 </div>
                 {activeRoom.type === 'custom' && (
                   <div className="px-3 py-1 rounded-lg text-xs font-mono font-bold" style={{ background: 'rgba(0, 240, 255, 0.1)', color: '#00f0ff' }}>

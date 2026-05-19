@@ -168,19 +168,19 @@ export default function Sidebar({
           borderTop: '1px solid var(--border-color)',
         }}
       >
-        <div className="flex items-center justify-around">
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar w-full py-1 px-2 scroll-smooth">
           {navItems.map((item) => (
             <motion.button
               key={item.id}
               whileTap={{ scale: 0.9 }}
               onClick={() => onPanelChange(item.id)}
-              className="flex flex-col items-center gap-1 p-2 rounded-xl"
+              className="flex flex-col items-center gap-1 p-2 rounded-xl flex-shrink-0"
               style={{
                 background: activePanel === item.id ? 'rgba(108, 99, 255, 0.15)' : 'transparent',
                 color: activePanel === item.id ? '#6c63ff' : 'var(--muted)',
                 border: 'none',
                 cursor: 'pointer',
-                minWidth: '60px',
+                minWidth: '64px',
               }}
             >
               {item.icon}
@@ -190,12 +190,13 @@ export default function Sidebar({
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={onSignOut}
-            className="flex flex-col items-center gap-1 p-2"
+            className="flex flex-col items-center gap-1 p-2 flex-shrink-0"
             style={{ 
               background: 'transparent', 
               color: 'var(--muted)', 
               border: 'none',
               cursor: 'pointer',
+              minWidth: '64px',
             }}
           >
             <LogOut size={20} />

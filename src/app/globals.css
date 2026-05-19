@@ -282,6 +282,15 @@ body {
   box-shadow: 0 0 30px rgba(0, 240, 255, 0.1);
 }
 
+/* ========== HIDE SCROLLBARS ========== */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* ========== MOBILE RESPONSIVE ========== */
 @media (max-width: 768px) {
   .sidebar-desktop {
