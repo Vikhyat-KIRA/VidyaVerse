@@ -130,7 +130,7 @@ export default function DashboardPage() {
 
       {/* Main Content */}
       <main className="flex-1 ml-0 md:ml-[72px] pb-20 md:pb-0 relative z-10">
-        <div className="h-full p-3 md:p-6">
+        <div className="h-full p-0 md:p-6">
           <AnimatePresence mode="wait">
             {activePanel === 'chat' && (
               <motion.div
@@ -139,7 +139,7 @@ export default function DashboardPage() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.25 }}
-                className="h-full glass-card p-4 md:p-6"
+                className="h-full glass-card rounded-none md:rounded-[24px] border-x-0 md:border-x border-t-0 md:border-t p-3.5 md:p-6"
               >
                 <ChatPanel userUid={user.uid} userName={userName} />
               </motion.div>
@@ -152,7 +152,7 @@ export default function DashboardPage() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.25 }}
-                className="h-full glass-card p-4 md:p-6"
+                className="h-full glass-card rounded-none md:rounded-[24px] border-x-0 md:border-x border-t-0 md:border-t p-3.5 md:p-6"
               >
                 <CommunityPanel userUid={user.uid} userName={userName} />
               </motion.div>
@@ -165,7 +165,7 @@ export default function DashboardPage() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.25 }}
-                className="h-full glass-card p-4 md:p-6"
+                className="h-full glass-card rounded-none md:rounded-[24px] border-x-0 md:border-x border-t-0 md:border-t p-3.5 md:p-6"
               >
                 <FlashForge userUid={user.uid} />
               </motion.div>
@@ -178,7 +178,7 @@ export default function DashboardPage() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.25 }}
-                className="h-full glass-card p-4 md:p-6"
+                className="h-full glass-card rounded-none md:rounded-[24px] border-x-0 md:border-x border-t-0 md:border-t p-3.5 md:p-6"
               >
                 <PomodoroCoach userUid={user.uid} userName={userName} userAim={userAim} />
               </motion.div>
@@ -191,7 +191,7 @@ export default function DashboardPage() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.25 }}
-                className="h-full glass-card p-4 md:p-6"
+                className="h-full glass-card rounded-none md:rounded-[24px] border-x-0 md:border-x border-t-0 md:border-t p-3.5 md:p-6"
               >
                 <FlashcardsPanel userUid={user.uid} />
               </motion.div>
@@ -204,7 +204,7 @@ export default function DashboardPage() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.25 }}
-                className="h-full glass-card p-4 md:p-6"
+                className="h-full glass-card rounded-none md:rounded-[24px] border-x-0 md:border-x border-t-0 md:border-t p-3.5 md:p-6"
               >
                 <BossBattlePanel userUid={user.uid} />
               </motion.div>
@@ -217,7 +217,7 @@ export default function DashboardPage() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.25 }}
-                className="h-full glass-card p-4 md:p-6"
+                className="h-full glass-card rounded-none md:rounded-[24px] border-x-0 md:border-x border-t-0 md:border-t p-3.5 md:p-6"
               >
                 <SettingsPanel userUid={user.uid} />
               </motion.div>

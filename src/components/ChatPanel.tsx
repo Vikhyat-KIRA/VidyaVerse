@@ -149,7 +149,7 @@ export default function ChatPanel({ userUid, userName }: ChatPanelProps) {
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="flex items-center gap-3 pb-4" style={{ borderBottom: '1px solid var(--border-color)' }}>
+      <div className="flex items-center gap-2.5 pb-2.5" style={{ borderBottom: '1px solid var(--border-color)' }}>
         <VayuOrb size="sm" isSpeaking={isLoading || isStreaming} isThinking={isLoading} />
         <div>
           <h2 className="text-lg font-bold" style={{ color: 'var(--foreground)' }}>
@@ -162,7 +162,7 @@ export default function ChatPanel({ userUid, userName }: ChatPanelProps) {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto py-4 space-y-4" style={{ scrollbarWidth: 'thin' }}>
+      <div className="flex-1 overflow-y-auto py-2.5 space-y-3" style={{ scrollbarWidth: 'thin' }}>
         <AnimatePresence initial={false}>
           {messages.map((msg, idx) => (
             <motion.div
@@ -173,7 +173,7 @@ export default function ChatPanel({ userUid, userName }: ChatPanelProps) {
               className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className="max-w-[85%] rounded-2xl px-4 py-3"
+                className="max-w-[90%] md:max-w-[85%] rounded-2xl px-3.5 py-2.5 md:px-4 md:py-3"
                 style={{
                   background: msg.role === 'user'
                     ? 'linear-gradient(135deg, rgba(108,99,255,0.2), rgba(108,99,255,0.1))'
@@ -190,7 +190,7 @@ export default function ChatPanel({ userUid, userName }: ChatPanelProps) {
                   />
                 )}
                 <div
-                  className="text-sm leading-relaxed whitespace-pre-wrap break-words overflow-hidden"
+                  className="text-xs md:text-sm leading-relaxed whitespace-pre-wrap break-words overflow-hidden"
                   style={{ color: 'var(--foreground)' }}
                   dangerouslySetInnerHTML={{
                     __html: msg.content
@@ -213,7 +213,7 @@ export default function ChatPanel({ userUid, userName }: ChatPanelProps) {
             animate={{ opacity: 1 }}
             className="flex justify-start"
           >
-            <div className="glass-card px-4 py-3 flex items-center gap-2">
+            <div className="glass-card px-3 py-2 flex items-center gap-2">
               <div className="flex gap-1">
                 {[0, 1, 2].map(i => (
                   <motion.div
@@ -272,7 +272,7 @@ export default function ChatPanel({ userUid, userName }: ChatPanelProps) {
 
       {/* Input Area */}
       <div
-        className="flex items-end gap-2 pt-3"
+        className="flex items-end gap-2 pt-2"
         style={{ borderTop: '1px solid var(--border-color)' }}
       >
         <motion.button
