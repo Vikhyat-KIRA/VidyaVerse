@@ -95,6 +95,7 @@ const jsonLd = {
       "@id": `${SITE_URL}/#website`,
       url: SITE_URL,
       name: "VidyaVerse",
+      alternateName: ["Vidya Verse", "VidyaVerse AI", "VidyaVerse Study", "vidyaverse.vercel.app"],
       description: "Your AI-powered study companion and productivity dashboard.",
       publisher: {
         "@type": "Organization",
