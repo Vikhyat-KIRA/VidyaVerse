@@ -106,15 +106,19 @@ export default function LandingPage({ onEnterApp }: LandingPageProps) {
         }}
       >
         <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <NextImage
-              src="/logo.png"
-              alt="VidyaVerse Logo"
-              width={32}
-              height={32}
-              className="rounded-lg logo-invert"
-            />
-            <span className="text-sm font-bold" style={{ color: 'var(--foreground)' }}>VidyaVerse</span>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden"
+              style={{ background: 'linear-gradient(135deg, var(--primary), var(--accent))', padding: '5px' }}
+            >
+              <NextImage
+                src="/icon.png"
+                alt="VidyaVerse"
+                width={20}
+                height={20}
+                style={{ filter: 'invert(1)' }}
+              />
+            </div>
+            <span className="text-sm font-bold tracking-tight" style={{ color: 'var(--foreground)' }}>VidyaVerse</span>
           </div>
 
           <div className="flex items-center gap-2">
@@ -399,32 +403,44 @@ export default function LandingPage({ onEnterApp }: LandingPageProps) {
       </section>
 
       {/* ══════════════ FOOTER ══════════════ */}
-      <footer className="relative z-10 py-10 px-4 text-center" style={{ borderTop: '1px solid var(--border-color)' }}>
+      <footer className="relative z-10 py-14 md:py-20 px-4 text-center" style={{ borderTop: '1px solid var(--border-color)' }}>
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="flex flex-col items-center gap-4"
+          className="flex flex-col items-center gap-6 max-w-md mx-auto"
         >
-          {/* Logo */}
+          {/* Full logo — proper readable size */}
           <NextImage
             src="/logo.png"
             alt="VidyaVerse Logo"
-            width={48}
-            height={48}
-            className="rounded-xl opacity-60 hover:opacity-100 transition-opacity logo-invert"
+            width={160}
+            height={120}
+            className="opacity-50 hover:opacity-80 transition-opacity duration-500 logo-invert"
+            style={{ objectFit: 'contain' }}
           />
 
-          {/* Made with love */}
+          {/* Made with love - primary credit */}
           <p className="text-sm font-medium flex items-center gap-1.5" style={{ color: 'var(--foreground)' }}>
-            Made with <Heart size={14} className="inline" style={{ color: '#f43f5e', fill: '#f43f5e' }} /> by{' '}
-            <span className="gradient-text font-bold">Vikhyat</span>
+            Made with{' '}
+            <motion.span
+              animate={{ scale: [1, 1.2, 1] }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              <Heart size={14} style={{ color: '#f43f5e', fill: '#f43f5e' }} />
+            </motion.span>
+            {' '}by <span className="gradient-text font-bold ml-0.5">Vikhyat</span>
           </p>
 
+          {/* Divider */}
+          <div className="w-12 h-px" style={{ background: 'var(--border-color)' }} />
+
           {/* Sub-footer */}
-          <p className="text-xs" style={{ color: 'var(--muted)' }}>
-            Built for students in Ranchi &amp; beyond 🇮🇳 &nbsp;·&nbsp; © {new Date().getFullYear()} VidyaVerse
+          <p className="text-xs leading-relaxed" style={{ color: 'var(--muted)' }}>
+            Built for students in Ranchi &amp; beyond 🇮🇳
+            <br />
+            © {new Date().getFullYear()} VidyaVerse · All rights reserved
           </p>
         </motion.div>
       </footer>
