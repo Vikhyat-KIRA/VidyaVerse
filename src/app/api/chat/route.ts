@@ -6,6 +6,7 @@ import os from 'os';
 import path from 'path';
 import { getUserAim, getUserSchool } from '@/actions/sheets';
 import { getVaultContext } from '@/lib/vault';
+const GEMINI_MODEL = 'gemini-3.1-flash-lite';
 
 async function buildSystemInstruction(uid: string): Promise<string> {
   const aim = await getUserAim(uid);
@@ -59,7 +60,7 @@ export async function POST(req: NextRequest) {
 
     const systemInstruction = await buildSystemInstruction(uid);
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash', systemInstruction });
+    const model = genAI.getGenerativeModel({ model: GEMINI_MODEL, systemInstruction });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const parts: any[] = [{ text: message || "Analyze this." }];
@@ -106,8 +107,13 @@ export async function POST(req: NextRequest) {
       async start(controller) {
         try {
           for await (const chunk of result.stream) {
-            if (chunk.text()) {
-              controller.enqueue(encoder.encode(chunk.text()));
+            try {
+              const text = chunk.text();
+              if (text) {
+                controller.enqueue(encoder.encode(text));
+              }
+            } catch (chunkErr) {
+              console.warn('Skipping empty or non-text chunk in stream:', chunkErr);
             }
           }
           controller.close();

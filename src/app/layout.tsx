@@ -132,8 +132,9 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${inter.variable} ${jetbrainsMono.variable} h-full`}
+      suppressHydrationWarning
     >
-      <body className="min-h-full" style={{ fontFamily: 'var(--font-inter), Inter, system-ui, sans-serif' }}>
+      <body className="min-h-full" style={{ fontFamily: 'var(--font-inter), Inter, system-ui, sans-serif' }} suppressHydrationWarning>
         {children}
         {/* Inject JSON-LD Schema Markup */}
         <script

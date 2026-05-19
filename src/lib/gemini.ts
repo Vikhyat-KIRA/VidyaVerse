@@ -15,6 +15,8 @@ export interface ChatMessage {
   timestamp: number;
 }
 
+const GEMINI_MODEL = 'gemini-3.1-flash-lite';
+
 // Initialize Gemini SDK
 function getGenAI() {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -78,7 +80,7 @@ export async function sendMessageToVayu(
     const systemInstruction = await buildSystemInstruction(uid);
     const genAI = getGenAI();
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash',
+      model: GEMINI_MODEL,
       systemInstruction,
     });
 
@@ -133,7 +135,7 @@ export async function sendMessageToVayuWithDocument(
     const systemInstruction = await buildSystemInstruction(uid);
     const genAI = getGenAI();
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash',
+      model: GEMINI_MODEL,
       systemInstruction,
     });
 
@@ -183,7 +185,7 @@ Please provide a detailed breakdown:
 Use emojis and keep the tone encouraging but professional. Format with Markdown.`;
 
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash',
+      model: GEMINI_MODEL,
     });
 
     const result = await model.generateContent([
@@ -212,7 +214,7 @@ export async function generatePomodoroRoast(
 ): Promise<string> {
   try {
     const genAI = getGenAI();
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
 
     const prompt = `Write a short, highly energetic, slightly roasting but ultimately motivational message for a student named ${name} who is slacking off. 
 Their life aim is to become a ${aim}.
@@ -242,7 +244,7 @@ export async function generateFlashcardsFromContext(
     const vaultContext = await getVaultContext(uid);
     const genAI = getGenAI();
     const model = genAI.getGenerativeModel({ 
-      model: 'gemini-2.5-flash',
+      model: GEMINI_MODEL,
       generationConfig: { responseMimeType: "application/json" }
     });
 
@@ -279,7 +281,7 @@ export async function generateDailyBossChallenge(uid: string): Promise<string> {
     const aim = await getUserAim(uid);
     const vaultContext = await getVaultContext(uid);
     const genAI = getGenAI();
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
 
     const prompt = `You are VAYU. Generate a highly challenging daily academic "Boss Battle" question for a student whose life aim is to become a: ${aim}.
     
@@ -309,7 +311,7 @@ export async function evaluateBossChallengeAnswer(
     const aim = await getUserAim(uid);
     const genAI = getGenAI();
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash',
+      model: GEMINI_MODEL,
       generationConfig: { responseMimeType: "application/json" }
     });
 
