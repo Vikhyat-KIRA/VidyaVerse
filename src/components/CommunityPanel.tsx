@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Hash, Plus, Key, Send, Loader2, Sparkles, ShieldCheck, MessageSquare, Trophy, Activity, ChevronLeft } from 'lucide-react';
+import { Users, Hash, Plus, Key, Send, Loader2, Sparkles, ShieldCheck, MessageSquare, Trophy, Activity, ChevronLeft, Mail, User } from 'lucide-react';
 import { getUserProfile, UserProfile } from '@/lib/firebase';
 import {
   Room, ChatMessage, getUserRooms, createCustomRoom,
-  joinRoomByCode, subscribeToMessages, sendMessage
+  joinRoomByCode, subscribeToMessages, sendMessage, startDirectMessage
 } from '@/lib/chat';
 import { getUserTitle, getLeaderboard } from '@/lib/exp';
 import { FocusSession, subscribeToFocusSessions } from '@/lib/focus';
@@ -31,8 +31,10 @@ export default function CommunityPanel({ userUid, userName }: CommunityPanelProp
   const [newRoomName, setNewRoomName] = useState('');
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState('');
+  const [showDmModal, setShowDmModal] = useState(false);
+  const [dmEmail, setDmEmail] = useState('');
 
-  const [activeTab, setActiveTab] = useState<'guilds' | 'focus' | 'leaderboards'>('guilds');
+  const [activeTab, setActiveTab] = useState<'guilds' | 'dms' | 'focus' | 'leaderboards'>('guilds');
   const [focusSessions, setFocusSessions] = useState<FocusSession[]>([]);
   const [leaderboard, setLeaderboard] = useState<UserProfile[]>([]);
 
@@ -137,7 +139,39 @@ export default function CommunityPanel({ userUid, userName }: CommunityPanelProp
     }
   };
 
-  const isMainActiveOnMobile = showMobileChat || activeTab !== 'guilds';
+  const handleStartDm = async () => {
+    if (!dmEmail.trim()) return;
+    setModalLoading(true);
+    setModalError('');
+    try {
+      const room = await startDirectMessage(userUid, userName, dmEmail);
+      // Check if already in list
+      if (!rooms.find(r => r.id === room.id)) {
+        setRooms([...rooms, room]);
+      }
+      setActiveRoom(room);
+      setShowDmModal(false);
+      setDmEmail('');
+      setShowMobileChat(true);
+    } catch (err) {
+      const error = err as { message?: string };
+      setModalError(error.message || 'Failed to start DM');
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  const getRoomDisplayName = (room: Room) => {
+    if (room.type === 'dm' && room.dmUserNames) {
+      const otherUid = room.members.find(uid => uid !== userUid);
+      if (otherUid && room.dmUserNames[otherUid]) {
+        return room.dmUserNames[otherUid];
+      }
+    }
+    return room.name;
+  };
+
+  const isMainActiveOnMobile = showMobileChat || (activeTab !== 'guilds' && activeTab !== 'dms');
 
   if (loading) {
     return (
@@ -159,26 +193,33 @@ export default function CommunityPanel({ userUid, userName }: CommunityPanelProp
         </div>
 
         {/* Tab Selector */}
-        <div className="flex gap-1 bg-[var(--surface)] p-1 rounded-xl border border-[var(--border-color)]">
+        <div className="flex gap-1 bg-[var(--surface)] p-1 rounded-xl border border-[var(--border-color)] overflow-x-auto no-scrollbar scroll-smooth">
           <button 
             onClick={() => setActiveTab('guilds')}
-            className={`flex-1 text-xs font-bold py-2 rounded-lg transition-colors flex items-center justify-center gap-1 ${activeTab === 'guilds' ? 'bg-[var(--primary)] text-white' : 'text-[var(--muted)] hover:text-[var(--foreground)]'}`}
+            className={`flex-1 text-[10px] font-bold py-2 px-1 rounded-lg transition-colors flex items-center justify-center gap-1 flex-shrink-0 min-w-[55px] ${activeTab === 'guilds' ? 'bg-[var(--primary)] text-white' : 'text-[var(--muted)] hover:text-[var(--foreground)]'}`}
           >
-            <Users size={12} />
+            <Users size={11} />
             Guilds
           </button>
           <button 
-            onClick={() => setActiveTab('focus')}
-            className={`flex-1 text-xs font-bold py-2 rounded-lg transition-colors flex items-center justify-center gap-1 ${activeTab === 'focus' ? 'bg-[var(--primary)] text-white' : 'text-[var(--muted)] hover:text-[var(--foreground)]'}`}
+            onClick={() => setActiveTab('dms')}
+            className={`flex-1 text-[10px] font-bold py-2 px-1 rounded-lg transition-colors flex items-center justify-center gap-1 flex-shrink-0 min-w-[55px] ${activeTab === 'dms' ? 'bg-[var(--primary)] text-white' : 'text-[var(--muted)] hover:text-[var(--foreground)]'}`}
           >
-            <Activity size={12} className={focusSessions.length > 0 ? "animate-pulse text-red-500" : ""} />
+            <MessageSquare size={11} />
+            DMs
+          </button>
+          <button 
+            onClick={() => setActiveTab('focus')}
+            className={`flex-1 text-[10px] font-bold py-2 px-1 rounded-lg transition-colors flex items-center justify-center gap-1 flex-shrink-0 min-w-[55px] ${activeTab === 'focus' ? 'bg-[var(--primary)] text-white' : 'text-[var(--muted)] hover:text-[var(--foreground)]'}`}
+          >
+            <Activity size={11} className={focusSessions.length > 0 ? "animate-pulse text-red-500" : ""} />
             Focus
           </button>
           <button 
             onClick={() => setActiveTab('leaderboards')}
-            className={`flex-1 text-xs font-bold py-2 rounded-lg transition-colors flex items-center justify-center gap-1 ${activeTab === 'leaderboards' ? 'bg-[var(--primary)] text-white' : 'text-[var(--muted)] hover:text-[var(--foreground)]'}`}
+            className={`flex-1 text-[10px] font-bold py-2 px-1 rounded-lg transition-colors flex items-center justify-center gap-1 flex-shrink-0 min-w-[55px] ${activeTab === 'leaderboards' ? 'bg-[var(--primary)] text-white' : 'text-[var(--muted)] hover:text-[var(--foreground)]'}`}
           >
-            <Trophy size={12} />
+            <Trophy size={11} />
             Rank
           </button>
         </div>
@@ -203,7 +244,7 @@ export default function CommunityPanel({ userUid, userName }: CommunityPanelProp
 
             {/* Rooms List */}
             <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
-              {rooms.map(room => (
+              {rooms.filter(r => r.type !== 'dm').map(room => (
                 <button
                   key={room.id}
                   onClick={() => {
@@ -234,6 +275,56 @@ export default function CommunityPanel({ userUid, userName }: CommunityPanelProp
           </>
         )}
 
+        {activeTab === 'dms' && (
+          <>
+            {/* Start DM Action Button */}
+            <button
+              onClick={() => setShowDmModal(true)}
+              className="btn-primary w-full text-xs flex items-center justify-center gap-1.5 py-2 px-0"
+            >
+              <Plus size={14} /> Start Private DM
+            </button>
+
+            {/* DMs List */}
+            <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+              {rooms.filter(r => r.type === 'dm').length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-center p-4 border border-dashed border-[var(--border-color)] rounded-2xl opacity-60">
+                  <User size={28} className="text-[var(--primary)] mb-2" />
+                  <h4 className="text-xs font-bold text-[var(--foreground)]">Direct Messages</h4>
+                  <p className="text-[9px] text-[var(--muted)] mt-1">
+                    Connect 1-on-1 privately with any classmate by entering their registered email! 🔒
+                  </p>
+                </div>
+              ) : (
+                rooms.filter(r => r.type === 'dm').map(room => (
+                  <button
+                    key={room.id}
+                    onClick={() => {
+                      setActiveRoom(room);
+                      setShowMobileChat(true);
+                    }}
+                    className="w-full text-left p-3 rounded-xl transition-all flex items-center gap-3 group"
+                    style={{
+                      background: activeRoom?.id === room.id ? 'rgba(108, 99, 255, 0.15)' : 'rgba(255, 255, 255, 0.02)',
+                      border: `1px solid ${activeRoom?.id === room.id ? 'var(--primary)' : 'var(--border-color)'}`
+                    }}
+                  >
+                    <div
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold bg-[var(--primary)]/10 text-[var(--primary)]"
+                    >
+                      {getRoomDisplayName(room).charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 overflow-hidden">
+                      <p className="text-sm font-semibold truncate text-[var(--foreground)]">{getRoomDisplayName(room)}</p>
+                      <p className="text-[10px] text-[var(--muted)]">Private Chat</p>
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
+          </>
+        )}
+
         {activeTab === 'focus' && (
           <div className="flex-1 flex flex-col justify-center items-center text-center p-4 border border-dashed border-[var(--border-color)] rounded-2xl opacity-60">
             <Activity size={32} className="text-[var(--primary)] mb-2 animate-pulse" />
@@ -257,7 +348,7 @@ export default function CommunityPanel({ userUid, userName }: CommunityPanelProp
 
       {/* Main Panel Content Area */}
       <div className={`flex-1 flex flex-col min-w-0 h-full ${!isMainActiveOnMobile ? 'hidden md:flex' : 'flex'}`} style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
-        {activeTab === 'guilds' ? (
+        {activeTab === 'guilds' || activeTab === 'dms' ? (
           activeRoom ? (
             <>
               {/* Header */}
@@ -271,12 +362,14 @@ export default function CommunityPanel({ userUid, userName }: CommunityPanelProp
                   </button>
                   <div className="min-w-0">
                     <h3 className="font-bold flex items-center gap-2 truncate">
-                      {activeRoom.name}
+                      {getRoomDisplayName(activeRoom)}
                       {activeRoom.type === 'auto' && <Sparkles size={14} className="text-[var(--primary)]" />}
                     </h3>
                     <p className="text-xs text-[var(--muted)] truncate">
                       {activeRoom.type === 'auto'
                         ? 'Everyone with your profile is here automatically.'
+                        : activeRoom.type === 'dm'
+                        ? 'Private 1-on-1 direct message space.'
                         : `Invite your friends with code: ${activeRoom.inviteCode}`}
                     </p>
                   </div>
@@ -328,7 +421,7 @@ export default function CommunityPanel({ userUid, userName }: CommunityPanelProp
                     type="text"
                     value={messageInput}
                     onChange={(e) => setMessageInput(e.target.value)}
-                    placeholder={`Message ${activeRoom.name}...`}
+                    placeholder={`Message ${getRoomDisplayName(activeRoom)}...`}
                     className="input-glass w-full pr-12"
                   />
                   <button
@@ -348,7 +441,7 @@ export default function CommunityPanel({ userUid, userName }: CommunityPanelProp
           ) : (
             <div className="h-full flex flex-col items-center justify-center text-[var(--muted)]">
               <Users size={64} className="mb-4 opacity-20" />
-              <p>Select a guild or create a custom room to start chatting.</p>
+              <p>{activeTab === 'dms' ? 'Select a DM or start a new private chat.' : 'Select a guild or create a custom room to start chatting.'}</p>
             </div>
           )
         ) : activeTab === 'focus' ? (
@@ -530,6 +623,34 @@ export default function CommunityPanel({ userUid, userName }: CommunityPanelProp
                 <button onClick={() => setShowCreateModal(false)} className="btn-ghost flex-1">Cancel</button>
                 <button onClick={handleCreateRoom} disabled={modalLoading || !newRoomName} className="btn-primary flex-1">
                   {modalLoading ? 'Creating...' : 'Create'}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Start DM Modal */}
+        {showDmModal && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(5px)' }}
+          >
+            <div className="glass-strong rounded-2xl p-6 w-full max-w-sm">
+              <h3 className="text-lg font-bold mb-1">Start Private DM</h3>
+              <p className="text-xs text-[var(--muted)] mb-4">Enter your friend's registered VidyaVerse email to connect directly. 🔒</p>
+              {modalError && <p className="text-red-400 text-xs mb-3">{modalError}</p>}
+              <input
+                type="email"
+                placeholder="e.g. emily@gmail.com"
+                value={dmEmail}
+                onChange={e => setDmEmail(e.target.value)}
+                className="input-glass w-full mb-4"
+              />
+              <div className="flex gap-2">
+                <button onClick={() => setShowDmModal(false)} className="btn-ghost flex-1">Cancel</button>
+                <button onClick={handleStartDm} disabled={modalLoading || !dmEmail.trim()} className="btn-primary flex-1">
+                  {modalLoading ? 'Connecting...' : 'Connect'}
                 </button>
               </div>
             </div>

@@ -8,10 +8,11 @@ import { db, UserProfile } from './firebase';
 export interface Room {
   id: string;
   name: string;
-  type: 'auto' | 'custom';
+  type: 'auto' | 'custom' | 'dm';
   inviteCode: string | null;
-  members: string[]; // for custom rooms
+  members: string[]; // for custom rooms and DMs
   createdAt?: unknown;
+  dmUserNames?: { [uid: string]: string };
 }
 
 export interface ChatMessage {
@@ -181,4 +182,76 @@ export function subscribeToMessages(roomId: string, callback: (messages: ChatMes
     });
     callback(messages);
   });
+}
+
+/**
+ * Start or retrieve a Direct Message room between two users by friend email lookup
+ */
+export async function startDirectMessage(
+  myUid: string,
+  myName: string,
+  friendEmail: string
+): Promise<Room> {
+  const emailLower = friendEmail.toLowerCase().trim();
+  
+  // 1. Find the friend by email in Firestore 'users' collection
+  const usersRef = collection(db, 'users');
+  const userQuery = query(usersRef, where('email', '==', emailLower));
+  const querySnap = await getDocs(userQuery);
+  
+  if (querySnap.empty) {
+    throw new Error('No student found with that email address');
+  }
+  
+  let friendUid = '';
+  let friendName = '';
+  querySnap.forEach((doc) => {
+    const data = doc.data();
+    friendUid = data.uid;
+    friendName = data.name || 'Student';
+  });
+  
+  if (friendUid === myUid) {
+    throw new Error('You cannot start a DM with yourself!');
+  }
+  
+  // 2. Check if a DM room already exists between these two users
+  const roomsRef = collection(db, 'rooms');
+  const dmQuery = query(
+    roomsRef,
+    where('type', '==', 'dm'),
+    where('members', 'array-contains', myUid)
+  );
+  
+  const dmSnap = await getDocs(dmQuery);
+  let existingRoom: Room | null = null;
+  
+  dmSnap.forEach((doc) => {
+    const room = doc.data() as Room;
+    if (room.members.includes(friendUid)) {
+      existingRoom = room;
+    }
+  });
+  
+  if (existingRoom) {
+    return existingRoom;
+  }
+  
+  // 3. Create a brand new DM room
+  const newRoomRef = doc(collection(db, 'rooms'));
+  const newRoomData: Room = {
+    id: newRoomRef.id,
+    name: 'Direct Message', // Fallback, resolved dynamically in UI
+    type: 'dm',
+    inviteCode: null,
+    members: [myUid, friendUid],
+    createdAt: serverTimestamp(),
+    dmUserNames: {
+      [myUid]: myName,
+      [friendUid]: friendName
+    }
+  };
+  
+  await setDoc(newRoomRef, newRoomData);
+  return newRoomData;
 }
