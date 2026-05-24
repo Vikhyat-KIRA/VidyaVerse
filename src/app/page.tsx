@@ -56,6 +56,8 @@ export default function DashboardPage() {
             setUserName(sheetData.name);
             setUserAim(sheetData.aim);
           }
+        }).catch(() => {
+          // Sheets unavailable — fall back to Firestore profile
         });
         updateLastVisit();
       }
@@ -102,10 +104,30 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
+    const root = document.documentElement;
+    // CSS variables that the theme customizer may have set inline
+    const themeVars = [
+      '--background', '--foreground', '--primary', '--primary-glow',
+      '--accent', '--accent-glow', '--surface', '--surface-hover',
+      '--border-color', '--muted', '--radius', '--glass-blur', '--glass-opacity',
+      '--sidebar-bg', '--sidebar-border', '--sidebar-separator',
+      '--mobile-nav-bg', '--tooltip-bg',
+    ];
+
     if (isDark) {
-      document.documentElement.classList.remove('light');
+      root.classList.remove('light');
+      // Re-apply saved customizer theme (dark-mode overrides) if any
+      try {
+        const savedTheme = localStorage.getItem('vidyaverse-theme');
+        if (savedTheme) {
+          const vars = JSON.parse(savedTheme) as Record<string, string>;
+          Object.entries(vars).forEach(([k, v]) => root.style.setProperty(k, v));
+        }
+      } catch { /* ignore */ }
     } else {
-      document.documentElement.classList.add('light');
+      // Clear ALL inline CSS variable overrides so the .light class takes effect
+      themeVars.forEach(k => root.style.removeProperty(k));
+      root.classList.add('light');
     }
     localStorage.setItem('vidyaverse-is-dark', isDark ? 'true' : 'false');
   }, [isDark]);

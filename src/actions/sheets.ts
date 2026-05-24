@@ -37,8 +37,13 @@ async function getAuthClient() {
     scopes: ['https://www.googleapis.com/auth/spreadsheets'],
   });
 
-  // Force a fresh short-lived token every time — prevents invalid_grant on cached tokens
-  await auth.authorize();
+  // Force a fresh short-lived token
+  try {
+    await auth.authorize();
+  } catch (err) {
+    console.error('[VidyaVerse] Google Sheets JWT auth failed:', (err as Error).message);
+    throw err;
+  }
   return auth;
 }
 
@@ -65,101 +70,106 @@ export async function syncProfileToSheet(profile: {
   school: string;
   aim: string;
 }): Promise<void> {
-  const auth = await getAuthClient();
-  const sheets = google.sheets({ version: 'v4', auth });
-  const sheetId = getSheetId();
+  try {
+    const auth = await getAuthClient();
+    const sheets = google.sheets({ version: 'v4', auth });
+    const sheetId = getSheetId();
 
-  const now = new Date().toISOString();
+    const now = new Date().toISOString();
 
-  // First, try to find if user already exists in the sheet
-  const existing = await sheets.spreadsheets.values.get({
-    spreadsheetId: sheetId,
-    range: 'Sheet1!A:A', // Column A = uid
-  });
+    // First, try to find if user already exists in the sheet
+    const existing = await sheets.spreadsheets.values.get({
+      spreadsheetId: sheetId,
+      range: 'Sheet1!A:A', // Column A = uid
+    });
 
-  const rows = existing.data.values || [];
-  let rowIndex = -1;
+    const rows = existing.data.values || [];
+    let rowIndex = -1;
 
-  for (let i = 0; i < rows.length; i++) {
-    if (rows[i][0] === profile.uid) {
-      rowIndex = i + 1; // Sheets are 1-indexed
-      break;
+    for (let i = 0; i < rows.length; i++) {
+      if (rows[i][0] === profile.uid) {
+        rowIndex = i + 1; // Sheets are 1-indexed
+        break;
+      }
     }
-  }
 
-  const rowData = [
-    profile.uid,
-    profile.name,
-    profile.email,
-    profile.class,
-    profile.board,
-    profile.school,
-    profile.aim,
-    rowIndex > 0 ? '' : now, // Keep existing createdAt or set new one
-    now, // lastUpdated
-  ];
+    const rowData = [
+      profile.uid,
+      profile.name,
+      profile.email,
+      profile.class,
+      profile.board,
+      profile.school,
+      profile.aim,
+      rowIndex > 0 ? '' : now, // Keep existing createdAt or set new one
+      now, // lastUpdated
+    ];
 
-  if (rowIndex > 0) {
-    // Update existing row (preserve createdAt in column H)
-    await sheets.spreadsheets.values.update({
-      spreadsheetId: sheetId,
-      range: `Sheet1!A${rowIndex}:I${rowIndex}`,
-      valueInputOption: 'USER_ENTERED',
-      requestBody: {
-        values: [
-          [
-            profile.uid,
-            profile.name,
-            profile.email,
-            profile.class,
-            profile.board,
-            profile.school,
-            profile.aim,
-            '', // Don't overwrite createdAt — leave blank to preserve
-            now,
+    if (rowIndex > 0) {
+      // Update existing row (preserve createdAt in column H)
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: sheetId,
+        range: `Sheet1!A${rowIndex}:I${rowIndex}`,
+        valueInputOption: 'USER_ENTERED',
+        requestBody: {
+          values: [
+            [
+              profile.uid,
+              profile.name,
+              profile.email,
+              profile.class,
+              profile.board,
+              profile.school,
+              profile.aim,
+              '', // Don't overwrite createdAt — leave blank to preserve
+              now,
+            ],
           ],
-        ],
-      },
-    });
+        },
+      });
 
-    // Re-fetch to keep createdAt (update only columns B-G and I)
-    await sheets.spreadsheets.values.update({
-      spreadsheetId: sheetId,
-      range: `Sheet1!B${rowIndex}:G${rowIndex}`,
-      valueInputOption: 'USER_ENTERED',
-      requestBody: {
-        values: [
-          [
-            profile.name,
-            profile.email,
-            profile.class,
-            profile.board,
-            profile.school,
-            profile.aim,
+      // Re-fetch to keep createdAt (update only columns B-G and I)
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: sheetId,
+        range: `Sheet1!B${rowIndex}:G${rowIndex}`,
+        valueInputOption: 'USER_ENTERED',
+        requestBody: {
+          values: [
+            [
+              profile.name,
+              profile.email,
+              profile.class,
+              profile.board,
+              profile.school,
+              profile.aim,
+            ],
           ],
-        ],
-      },
-    });
+        },
+      });
 
-    await sheets.spreadsheets.values.update({
-      spreadsheetId: sheetId,
-      range: `Sheet1!I${rowIndex}`,
-      valueInputOption: 'USER_ENTERED',
-      requestBody: {
-        values: [[now]],
-      },
-    });
-  } else {
-    // Append new row
-    rowData[7] = now; // createdAt for new users
-    await sheets.spreadsheets.values.append({
-      spreadsheetId: sheetId,
-      range: 'Sheet1!A:I',
-      valueInputOption: 'USER_ENTERED',
-      requestBody: {
-        values: [rowData],
-      },
-    });
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: sheetId,
+        range: `Sheet1!I${rowIndex}`,
+        valueInputOption: 'USER_ENTERED',
+        requestBody: {
+          values: [[now]],
+        },
+      });
+    } else {
+      // Append new row
+      rowData[7] = now; // createdAt for new users
+      await sheets.spreadsheets.values.append({
+        spreadsheetId: sheetId,
+        range: 'Sheet1!A:I',
+        valueInputOption: 'USER_ENTERED',
+        requestBody: {
+          values: [rowData],
+        },
+      });
+    }
+  } catch (err) {
+    console.error('[VidyaVerse] syncProfileToSheet failed:', (err as Error).message);
+    // Non-critical: app continues working without Sheets sync
   }
 }
 
@@ -174,32 +184,37 @@ export async function getUserContextFromSheet(uid: string): Promise<{
   board: string;
   name: string;
 } | null> {
-  const auth = await getAuthClient();
-  const sheets = google.sheets({ version: 'v4', auth });
-  const sheetId = getSheetId();
+  try {
+    const auth = await getAuthClient();
+    const sheets = google.sheets({ version: 'v4', auth });
+    const sheetId = getSheetId();
 
-  const result = await sheets.spreadsheets.values.get({
-    spreadsheetId: sheetId,
-    range: 'Sheet1!A:I',
-  });
+    const result = await sheets.spreadsheets.values.get({
+      spreadsheetId: sheetId,
+      range: 'Sheet1!A:I',
+    });
 
-  const rows = result.data.values || [];
+    const rows = result.data.values || [];
 
-  // Skip header row (index 0), search for matching uid
-  for (let i = 1; i < rows.length; i++) {
-    if (rows[i][0] === uid) {
-      return {
-        name: rows[i][1] || 'Student',
-        // rows[2] = email (skip)
-        class: rows[i][3] || '',
-        board: rows[i][4] || '',
-        school: rows[i][5] || 'Unknown School',
-        aim: rows[i][6] || 'Become an excellent student',
-      };
+    // Skip header row (index 0), search for matching uid
+    for (let i = 1; i < rows.length; i++) {
+      if (rows[i][0] === uid) {
+        return {
+          name: rows[i][1] || 'Student',
+          // rows[2] = email (skip)
+          class: rows[i][3] || '',
+          board: rows[i][4] || '',
+          school: rows[i][5] || 'Unknown School',
+          aim: rows[i][6] || 'Become an excellent student',
+        };
+      }
     }
-  }
 
-  return null;
+    return null;
+  } catch (err) {
+    console.error('[VidyaVerse] getUserContextFromSheet failed:', (err as Error).message);
+    return null;
+  }
 }
 
 /**
@@ -222,34 +237,39 @@ export async function getUserSchool(uid: string): Promise<string> {
  * Get full user row from the sheet
  */
 export async function getUserFromSheet(uid: string): Promise<SheetUserRow | null> {
-  const auth = await getAuthClient();
-  const sheets = google.sheets({ version: 'v4', auth });
-  const sheetId = getSheetId();
+  try {
+    const auth = await getAuthClient();
+    const sheets = google.sheets({ version: 'v4', auth });
+    const sheetId = getSheetId();
 
-  const result = await sheets.spreadsheets.values.get({
-    spreadsheetId: sheetId,
-    range: 'Sheet1!A:I',
-  });
+    const result = await sheets.spreadsheets.values.get({
+      spreadsheetId: sheetId,
+      range: 'Sheet1!A:I',
+    });
 
-  const rows = result.data.values || [];
+    const rows = result.data.values || [];
 
-  for (let i = 1; i < rows.length; i++) {
-    if (rows[i][0] === uid) {
-      return {
-        uid: rows[i][0],
-        name: rows[i][1] || '',
-        email: rows[i][2] || '',
-        class: rows[i][3] || '',
-        board: rows[i][4] || '',
-        school: rows[i][5] || '',
-        aim: rows[i][6] || '',
-        createdAt: rows[i][7] || '',
-        lastUpdated: rows[i][8] || '',
-      };
+    for (let i = 1; i < rows.length; i++) {
+      if (rows[i][0] === uid) {
+        return {
+          uid: rows[i][0],
+          name: rows[i][1] || '',
+          email: rows[i][2] || '',
+          class: rows[i][3] || '',
+          board: rows[i][4] || '',
+          school: rows[i][5] || '',
+          aim: rows[i][6] || '',
+          createdAt: rows[i][7] || '',
+          lastUpdated: rows[i][8] || '',
+        };
+      }
     }
-  }
 
-  return null;
+    return null;
+  } catch (err) {
+    console.error('[VidyaVerse] getUserFromSheet failed:', (err as Error).message);
+    return null;
+  }
 }
 
 /**

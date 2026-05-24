@@ -28,7 +28,7 @@ function renderMarkdown(text: string): string {
     .replace(/^#{2}\s(.+)$/gm, '<h2 class="md-h2">$1</h2>')
     .replace(/^#{1}\s(.+)$/gm, '<h1 class="md-h1">$1</h1>')
     .replace(/^[-*]\s(.+)$/gm, '<li class="md-li">$1</li>')
-    .replace(/(<li.*<\/li>)/s, '<ul class="md-ul">$1</ul>')
+    .replace(/(<li[\s\S]*<\/li>)/, '<ul class="md-ul">$1</ul>')
     .replace(/\n/g, '<br/>');
 }
 
