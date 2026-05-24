@@ -79,14 +79,33 @@ export default function DashboardPage() {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--background)' }}>
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-center"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
+          className="flex flex-col items-center gap-5"
         >
-          <div className="w-12 h-12 mx-auto mb-4 rounded-full animate-pulse-glow"
-            style={{ background: 'linear-gradient(135deg, #6c63ff, #00f0ff)' }}
-          />
-          <p className="text-sm" style={{ color: 'var(--muted)' }}>Loading VidyaVerse...</p>
+          {/* Premium logo mark */}
+          <div className="relative">
+            <motion.div
+              className="w-14 h-14 rounded-2xl flex items-center justify-center"
+              style={{
+                background: 'linear-gradient(135deg, #6366f1 0%, #06b6d4 100%)',
+                boxShadow: '0 0 0 1px rgba(255,255,255,0.1), 0 8px 32px rgba(99,102,241,0.3)',
+              }}
+              animate={{ boxShadow: ['0 0 0 1px rgba(255,255,255,0.1), 0 8px 32px rgba(99,102,241,0.3)', '0 0 0 1px rgba(255,255,255,0.1), 0 8px 48px rgba(99,102,241,0.5)', '0 0 0 1px rgba(255,255,255,0.1), 0 8px 32px rgba(99,102,241,0.3)'] }}
+              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              <span style={{ fontSize: 22, fontWeight: 800, color: 'white', fontFamily: 'inherit', letterSpacing: '-0.02em' }}>V</span>
+            </motion.div>
+            {/* Spinning ring */}
+            <svg className="absolute -inset-2 animate-spin-slow" viewBox="0 0 64 64" style={{ width: 72, height: 72 }}>
+              <circle cx="32" cy="32" r="28" fill="none" stroke="rgba(99,102,241,0.2)" strokeWidth="1.5" strokeDasharray="8 4" />
+            </svg>
+          </div>
+          <div className="text-center">
+            <p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>VidyaVerse</p>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>Preparing your study universe…</p>
+          </div>
         </motion.div>
       </div>
     );
@@ -124,25 +143,23 @@ export default function DashboardPage() {
   // Dashboard (authenticated)
   return (
     <div className="h-screen flex bg-grain" style={{ background: 'var(--background)' }}>
-      {/* Ambient background effects */}
+      {/* Ambient background blobs */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <motion.div
-          animate={{
-            x: [0, 50, -30, 0],
-            y: [0, -30, 20, 0],
+          animate={{ x: [0, 60, -30, 0], y: [0, -40, 25, 0] }}
+          transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute -top-32 right-0 w-[700px] h-[700px] rounded-full"
+          style={{
+            background: 'radial-gradient(circle, rgba(99,102,241,0.06), transparent 65%)',
           }}
-          transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full opacity-[0.03]"
-          style={{ background: 'radial-gradient(circle, #6c63ff, transparent)' }}
         />
         <motion.div
-          animate={{
-            x: [0, -40, 30, 0],
-            y: [0, 30, -20, 0],
+          animate={{ x: [0, -50, 30, 0], y: [0, 35, -25, 0] }}
+          transition={{ duration: 28, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute -bottom-32 left-16 w-[600px] h-[600px] rounded-full"
+          style={{
+            background: 'radial-gradient(circle, rgba(6,182,212,0.05), transparent 65%)',
           }}
-          transition={{ duration: 25, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute bottom-0 left-0 w-[500px] h-[500px] rounded-full opacity-[0.03]"
-          style={{ background: 'radial-gradient(circle, #00f0ff, transparent)' }}
         />
       </div>
 
@@ -159,8 +176,8 @@ export default function DashboardPage() {
       />
 
       {/* Main Content */}
-      <main className="flex-1 ml-0 md:ml-[72px] pb-20 md:pb-0 relative z-10">
-        <div className="h-full p-0 md:p-6">
+      <main className="flex-1 ml-0 md:ml-[68px] pb-20 md:pb-0 relative z-10">
+        <div className="h-full p-0 md:p-5">
           <AnimatePresence mode="wait">
             {activePanel === 'chat' && (
               <motion.div
@@ -169,7 +186,7 @@ export default function DashboardPage() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.25 }}
-                className="h-full glass-card rounded-none md:rounded-[24px] border-x-0 md:border-x border-t-0 md:border-t p-3.5 md:p-6"
+                className="h-full glass-card rounded-none md:rounded-[20px] border-x-0 md:border-x border-t-0 md:border-t p-3 md:p-5"
               >
                 <ChatPanel userUid={user!.uid} userName={userName} />
               </motion.div>
@@ -182,7 +199,7 @@ export default function DashboardPage() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.25 }}
-                className="h-full glass-card rounded-none md:rounded-[24px] border-x-0 md:border-x border-t-0 md:border-t p-3.5 md:p-6"
+                className="h-full glass-card rounded-none md:rounded-[20px] border-x-0 md:border-x border-t-0 md:border-t p-3 md:p-5"
               >
                 <CommunityPanel userUid={user!.uid} userName={userName} />
               </motion.div>
@@ -195,7 +212,7 @@ export default function DashboardPage() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.25 }}
-                className="h-full glass-card rounded-none md:rounded-[24px] border-x-0 md:border-x border-t-0 md:border-t p-3.5 md:p-6"
+                className="h-full glass-card rounded-none md:rounded-[20px] border-x-0 md:border-x border-t-0 md:border-t p-3 md:p-5"
               >
                 <FlashForge userUid={user!.uid} />
               </motion.div>
@@ -208,7 +225,7 @@ export default function DashboardPage() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.25 }}
-                className="h-full glass-card rounded-none md:rounded-[24px] border-x-0 md:border-x border-t-0 md:border-t p-3.5 md:p-6"
+                className="h-full glass-card rounded-none md:rounded-[20px] border-x-0 md:border-x border-t-0 md:border-t p-3 md:p-5"
               >
                 <PomodoroCoach userUid={user!.uid} userName={userName} userAim={userAim} />
               </motion.div>
@@ -221,7 +238,7 @@ export default function DashboardPage() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.25 }}
-                className="h-full glass-card rounded-none md:rounded-[24px] border-x-0 md:border-x border-t-0 md:border-t p-3.5 md:p-6"
+                className="h-full glass-card rounded-none md:rounded-[20px] border-x-0 md:border-x border-t-0 md:border-t p-3 md:p-5"
               >
                 <FlashcardsPanel userUid={user!.uid} />
               </motion.div>
@@ -234,7 +251,7 @@ export default function DashboardPage() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.25 }}
-                className="h-full glass-card rounded-none md:rounded-[24px] border-x-0 md:border-x border-t-0 md:border-t p-3.5 md:p-6"
+                className="h-full glass-card rounded-none md:rounded-[20px] border-x-0 md:border-x border-t-0 md:border-t p-3 md:p-5"
               >
                 <BossBattlePanel userUid={user!.uid} />
               </motion.div>
@@ -247,7 +264,7 @@ export default function DashboardPage() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.25 }}
-                className="h-full glass-card rounded-none md:rounded-[24px] border-x-0 md:border-x border-t-0 md:border-t p-3.5 md:p-6"
+                className="h-full glass-card rounded-none md:rounded-[20px] border-x-0 md:border-x border-t-0 md:border-t p-3 md:p-5"
               >
                 <SettingsPanel userUid={user!.uid} />
               </motion.div>

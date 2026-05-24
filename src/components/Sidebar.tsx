@@ -21,13 +21,13 @@ interface SidebarProps {
 }
 
 const navItems: { id: ActivePanel; label: string; icon: React.ReactNode }[] = [
-  { id: 'chat', label: 'VAYU Chat', icon: <MessageSquare size={20} /> },
-  { id: 'community', label: 'Guilds', icon: <Users size={20} /> },
-  { id: 'flashcards', label: 'Flashcards', icon: <Layers size={20} /> },
-  { id: 'flashforge', label: 'Flash-Forge', icon: <Zap size={20} /> },
-  { id: 'pomodoro', label: 'Pomodoro', icon: <Timer size={20} /> },
-  { id: 'bossbattle', label: 'Boss Battle', icon: <Swords size={20} /> },
-  { id: 'settings', label: 'Settings', icon: <Settings size={20} /> },
+  { id: 'chat', label: 'VAYU Chat', icon: <MessageSquare size={18} /> },
+  { id: 'community', label: 'Guilds', icon: <Users size={18} /> },
+  { id: 'flashcards', label: 'Flashcards', icon: <Layers size={18} /> },
+  { id: 'flashforge', label: 'Flash-Forge', icon: <Zap size={18} /> },
+  { id: 'pomodoro', label: 'Pomodoro', icon: <Timer size={18} /> },
+  { id: 'bossbattle', label: 'Boss Battle', icon: <Swords size={18} /> },
+  { id: 'settings', label: 'Settings', icon: <Settings size={18} /> },
 ];
 
 export default function Sidebar({
@@ -42,110 +42,145 @@ export default function Sidebar({
 }: SidebarProps) {
   return (
     <>
-      {/* Desktop Sidebar */}
+      {/* ── Desktop Sidebar ───────────────────────────────── */}
       <aside
-        className="sidebar-desktop fixed left-0 top-0 bottom-0 w-[72px] flex flex-col items-center py-4 z-50"
+        className="sidebar-desktop fixed left-0 top-0 bottom-0 w-[68px] flex flex-col items-center py-3 z-50"
         style={{
-          background: 'rgba(8, 9, 13, 0.8)',
-          backdropFilter: 'blur(30px)',
-          borderRight: '1px solid var(--border-color)',
+          background: 'rgba(9, 10, 15, 0.88)',
+          backdropFilter: 'blur(24px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+          borderRight: '1px solid rgba(255, 255, 255, 0.055)',
+          boxShadow: '1px 0 0 0 rgba(255,255,255,0.03)',
         }}
       >
         {/* Logo / Orb */}
-        <div className="mb-6">
+        <div className="mb-5 mt-1">
           <VayuOrb size="sm" />
         </div>
 
+        {/* Thin separator */}
+        <div className="w-8 h-px mb-3" style={{ background: 'rgba(255,255,255,0.06)' }} />
+
         {/* Nav Items */}
-        <nav className="flex-1 flex flex-col items-center gap-2">
-          {navItems.map((item) => (
-            <motion.button
-              key={item.id}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={() => onPanelChange(item.id)}
-              className="relative p-3 rounded-xl transition-all group"
-              style={{
-                background: activePanel === item.id 
-                  ? 'rgba(108, 99, 255, 0.15)' 
-                  : 'transparent',
-                color: activePanel === item.id 
-                  ? '#6c63ff' 
-                  : 'var(--muted)',
-                border: 'none',
-                cursor: 'pointer',
-              }}
-              title={item.label}
-            >
-              {item.icon}
-              {activePanel === item.id && (
-                <motion.div
-                  layoutId="activeIndicator"
-                  className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full"
-                  style={{ background: '#6c63ff' }}
-                />
-              )}
-              {/* Tooltip */}
-              <div
-                className="absolute left-full ml-3 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity"
+        <nav className="flex-1 flex flex-col items-center gap-1 w-full px-2">
+          {navItems.map((item) => {
+            const isActive = activePanel === item.id;
+            return (
+              <motion.button
+                key={item.id}
+                whileHover={{ scale: 1.08 }}
+                whileTap={{ scale: 0.92 }}
+                onClick={() => onPanelChange(item.id)}
+                className="relative w-full flex items-center justify-center p-2.5 rounded-xl transition-all group"
                 style={{
-                  background: 'rgba(0,0,0,0.8)',
-                  color: 'white',
-                  backdropFilter: 'blur(10px)',
+                  background: isActive
+                    ? 'rgba(99, 102, 241, 0.14)'
+                    : 'transparent',
+                  color: isActive
+                    ? '#818cf8'
+                    : 'var(--muted)',
+                  border: 'none',
+                  cursor: 'pointer',
                 }}
+                title={item.label}
+                aria-label={item.label}
               >
-                {item.label}
-              </div>
-            </motion.button>
-          ))}
+                {item.icon}
+
+                {/* Active indicator pill */}
+                {isActive && (
+                  <motion.div
+                    layoutId="activeIndicator"
+                    className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full"
+                    style={{ background: 'linear-gradient(180deg, #6366f1, #818cf8)' }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                  />
+                )}
+
+                {/* Tooltip */}
+                <div
+                  className="absolute left-full ml-3 px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-150 translate-x-1 group-hover:translate-x-0"
+                  style={{
+                    background: 'rgba(15, 17, 25, 0.92)',
+                    color: 'rgba(241, 245, 249, 0.9)',
+                    backdropFilter: 'blur(10px)',
+                    border: '1px solid rgba(255,255,255,0.07)',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                    zIndex: 100,
+                  }}
+                >
+                  {item.label}
+                </div>
+              </motion.button>
+            );
+          })}
         </nav>
 
         {/* Bottom Actions */}
-        <div className="flex flex-col items-center gap-4">
+        <div className="flex flex-col items-center gap-2 pb-1 w-full px-2">
+          {/* Thin separator */}
+          <div className="w-8 h-px mb-1" style={{ background: 'rgba(255,255,255,0.06)' }} />
+
           {/* XP & Streak */}
-          <div className="flex flex-col items-center gap-2">
-            <div className="flex flex-col items-center justify-center p-2 rounded-xl" style={{ background: 'rgba(255, 153, 0, 0.1)', color: '#ff9900' }} title={`Streak: ${userStreak} Days`}>
-              <Flame size={18} />
-              <span className="text-[10px] font-bold mt-1">{userStreak}</span>
-            </div>
-            <div className="flex flex-col items-center justify-center p-2 rounded-xl" style={{ background: 'rgba(0, 240, 255, 0.1)', color: '#00f0ff' }} title={`XP: ${userXp}`}>
-              <Star size={18} />
-              <span className="text-[10px] font-bold mt-1">{userXp > 999 ? '999+' : userXp}</span>
-            </div>
+          <div className="flex flex-col items-center gap-1.5 w-full">
+            <motion.div
+              whileHover={{ scale: 1.1 }}
+              className="flex flex-col items-center justify-center p-2 rounded-xl w-full cursor-default"
+              style={{ background: 'rgba(251, 146, 60, 0.08)' }}
+              title={`🔥 ${userStreak} Day Streak`}
+            >
+              <Flame size={14} style={{ color: '#fb923c' }} />
+              <span className="text-[9px] font-bold mt-0.5" style={{ color: '#fb923c' }}>{userStreak}</span>
+            </motion.div>
+            <motion.div
+              whileHover={{ scale: 1.1 }}
+              className="flex flex-col items-center justify-center p-2 rounded-xl w-full cursor-default"
+              style={{ background: 'rgba(6, 182, 212, 0.08)' }}
+              title={`⭐ ${userXp} XP`}
+            >
+              <Star size={14} style={{ color: '#22d3ee' }} />
+              <span className="text-[9px] font-bold mt-0.5" style={{ color: '#22d3ee' }}>
+                {userXp > 9999 ? '9k+' : userXp > 999 ? `${(userXp / 1000).toFixed(1)}k` : userXp}
+              </span>
+            </motion.div>
           </div>
 
+          {/* Theme Toggle */}
           <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={onToggleTheme}
-            className="p-3 rounded-xl"
+            className="p-2.5 rounded-xl transition-colors"
             style={{
               background: 'transparent',
               color: 'var(--muted)',
               border: 'none',
               cursor: 'pointer',
             }}
-            title={isDark ? 'Light Mode' : 'Dark Mode'}
+            title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
           >
-            {isDark ? <Sun size={18} /> : <Moon size={18} />}
+            {isDark ? <Sun size={16} /> : <Moon size={16} />}
           </motion.button>
 
+          {/* Avatar */}
           <div
-            className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold cursor-default"
             style={{
-              background: 'linear-gradient(135deg, #6c63ff, #00f0ff)',
+              background: 'linear-gradient(135deg, #6366f1, #06b6d4)',
               color: 'white',
+              boxShadow: '0 0 0 2px rgba(99, 102, 241, 0.25)',
             }}
             title={userName}
           >
             {userName.charAt(0).toUpperCase()}
           </div>
 
+          {/* Sign Out */}
           <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={onSignOut}
-            className="p-2 rounded-lg"
+            className="p-2 rounded-lg transition-colors"
             style={{
               background: 'transparent',
               color: 'var(--muted)',
@@ -154,53 +189,56 @@ export default function Sidebar({
             }}
             title="Sign Out"
           >
-            <LogOut size={16} />
+            <LogOut size={14} />
           </motion.button>
         </div>
       </aside>
 
-      {/* Mobile Bottom Nav */}
+      {/* ── Mobile Bottom Nav ─────────────────────────────── */}
       <nav
-        className="mobile-nav fixed bottom-0 left-0 right-0 z-50 px-2 py-2"
+        className="mobile-nav fixed bottom-0 left-0 right-0 z-50 px-2 py-1.5"
         style={{
-          background: 'rgba(8, 9, 13, 0.9)',
-          backdropFilter: 'blur(30px)',
-          borderTop: '1px solid var(--border-color)',
+          background: 'rgba(9, 10, 15, 0.93)',
+          backdropFilter: 'blur(24px) saturate(180%)',
+          borderTop: '1px solid rgba(255, 255, 255, 0.055)',
         }}
       >
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar w-full py-1 px-2 scroll-smooth">
-          {navItems.map((item) => (
-            <motion.button
-              key={item.id}
-              whileTap={{ scale: 0.9 }}
-              onClick={() => onPanelChange(item.id)}
-              className="flex flex-col items-center gap-1 p-2 rounded-xl flex-shrink-0"
-              style={{
-                background: activePanel === item.id ? 'rgba(108, 99, 255, 0.15)' : 'transparent',
-                color: activePanel === item.id ? '#6c63ff' : 'var(--muted)',
-                border: 'none',
-                cursor: 'pointer',
-                minWidth: '64px',
-              }}
-            >
-              {item.icon}
-              <span className="text-[10px] font-medium">{item.label}</span>
-            </motion.button>
-          ))}
+        <div className="flex items-center justify-around overflow-x-auto no-scrollbar w-full py-0.5">
+          {navItems.map((item) => {
+            const isActive = activePanel === item.id;
+            return (
+              <motion.button
+                key={item.id}
+                whileTap={{ scale: 0.88 }}
+                onClick={() => onPanelChange(item.id)}
+                className="flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-xl flex-shrink-0 transition-colors"
+                style={{
+                  background: isActive ? 'rgba(99, 102, 241, 0.12)' : 'transparent',
+                  color: isActive ? '#818cf8' : 'var(--muted)',
+                  border: 'none',
+                  cursor: 'pointer',
+                  minWidth: '52px',
+                }}
+              >
+                {item.icon}
+                <span className="text-[9px] font-semibold">{item.label}</span>
+              </motion.button>
+            );
+          })}
           <motion.button
-            whileTap={{ scale: 0.9 }}
+            whileTap={{ scale: 0.88 }}
             onClick={onSignOut}
-            className="flex flex-col items-center gap-1 p-2 flex-shrink-0"
-            style={{ 
-              background: 'transparent', 
-              color: 'var(--muted)', 
+            className="flex flex-col items-center gap-0.5 py-1.5 px-2 flex-shrink-0 transition-colors"
+            style={{
+              background: 'transparent',
+              color: 'var(--muted)',
               border: 'none',
               cursor: 'pointer',
-              minWidth: '64px',
+              minWidth: '52px',
             }}
           >
-            <LogOut size={20} />
-            <span className="text-[10px] font-medium">Exit</span>
+            <LogOut size={18} />
+            <span className="text-[9px] font-semibold">Exit</span>
           </motion.button>
         </div>
       </nav>

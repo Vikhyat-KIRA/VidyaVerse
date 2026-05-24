@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Loader2, Paperclip, Trash2, FileText } from 'lucide-react';
+import { Send, Loader2, Paperclip, Trash2, FileText, Sparkles } from 'lucide-react';
 import { type ChatMessage } from '@/lib/gemini';
 import VayuOrb from './VayuOrb';
 
@@ -15,6 +15,21 @@ interface AttachedFile {
   file: File;
   previewUrl: string | null;
   isImage: boolean;
+}
+
+// ─── Markdown renderer helper ────────────────────────────────────────────────
+function renderMarkdown(text: string): string {
+  return text
+    .replace(/```([\s\S]*?)```/g, '<pre class="code-block"><code>$1</code></pre>')
+    .replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/^#{3}\s(.+)$/gm, '<h3 class="md-h3">$1</h3>')
+    .replace(/^#{2}\s(.+)$/gm, '<h2 class="md-h2">$1</h2>')
+    .replace(/^#{1}\s(.+)$/gm, '<h1 class="md-h1">$1</h1>')
+    .replace(/^[-*]\s(.+)$/gm, '<li class="md-li">$1</li>')
+    .replace(/(<li.*<\/li>)/s, '<ul class="md-ul">$1</ul>')
+    .replace(/\n/g, '<br/>');
 }
 
 export default function ChatPanel({ userUid, userName }: ChatPanelProps) {
@@ -31,6 +46,7 @@ export default function ChatPanel({ userUid, userName }: ChatPanelProps) {
   const [attachedFile, setAttachedFile] = useState<AttachedFile | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -39,6 +55,14 @@ export default function ChatPanel({ userUid, userName }: ChatPanelProps) {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Auto-resize textarea
+  useEffect(() => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    ta.style.height = 'auto';
+    ta.style.height = Math.min(ta.scrollHeight, 120) + 'px';
+  }, [input]);
 
   const handleSend = async () => {
     if (isLoading || (!input.trim() && !attachedFile)) return;
@@ -51,10 +75,10 @@ export default function ChatPanel({ userUid, userName }: ChatPanelProps) {
     };
 
     setMessages(prev => [...prev, userMessage]);
-    
+
     const currentInput = input;
     const currentAttachment = attachedFile;
-    
+
     setInput('');
     setAttachedFile(null);
     setIsLoading(true);
@@ -86,7 +110,7 @@ export default function ChatPanel({ userUid, userName }: ChatPanelProps) {
 
       setIsLoading(false);
       setIsStreaming(true);
-      
+
       const decoder = new TextDecoder();
       let streamedResponse = '';
 
@@ -95,7 +119,7 @@ export default function ChatPanel({ userUid, userName }: ChatPanelProps) {
         if (done) break;
         const text = decoder.decode(value, { stream: true });
         streamedResponse += text;
-        
+
         setMessages(prev => {
           const newMessages = [...prev];
           newMessages[newMessages.length - 1].content = streamedResponse;
@@ -105,7 +129,7 @@ export default function ChatPanel({ userUid, userName }: ChatPanelProps) {
     } catch {
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: '⚠️ Oops, had a hiccup analyzing that. Try again!',
+        content: '⚠️ Oops, had a hiccup. Please try again!',
         timestamp: Date.now(),
       }]);
     } finally {
@@ -119,7 +143,7 @@ export default function ChatPanel({ userUid, userName }: ChatPanelProps) {
     if (!file) return;
 
     const isImage = file.type.startsWith('image/');
-    
+
     if (isImage) {
       const reader = new FileReader();
       reader.onload = (ev) => {
@@ -148,58 +172,105 @@ export default function ChatPanel({ userUid, userName }: ChatPanelProps) {
 
   return (
     <div className="h-full flex flex-col">
-      {/* Header */}
-      <div className="flex items-center gap-2.5 pb-2.5" style={{ borderBottom: '1px solid var(--border-color)' }}>
+      {/* ── Header ─────────────────────────────────────────── */}
+      <div
+        className="flex items-center gap-3 pb-3 mb-1"
+        style={{ borderBottom: '1px solid var(--border-color)' }}
+      >
         <VayuOrb size="sm" isSpeaking={isLoading || isStreaming} isThinking={isLoading} />
-        <div>
-          <h2 className="text-lg font-bold" style={{ color: 'var(--foreground)' }}>
+        <div className="flex-1 min-w-0">
+          <h2 className="text-base font-bold leading-tight" style={{ color: 'var(--foreground)' }}>
             VAYU
           </h2>
-          <p className="text-xs" style={{ color: 'var(--muted)' }}>
-            {isLoading ? '✨ Reading document...' : isStreaming ? '🟢 Speaking...' : '🟢 Online • Your AI Mentor'}
-          </p>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <span
+              className="inline-block w-1.5 h-1.5 rounded-full"
+              style={{
+                background: isLoading ? '#f59e0b' : isStreaming ? '#06b6d4' : '#10b981',
+                boxShadow: `0 0 6px ${isLoading ? '#f59e0b' : isStreaming ? '#06b6d4' : '#10b981'}`,
+              }}
+            />
+            <p className="text-xs" style={{ color: 'var(--muted)' }}>
+              {isLoading ? 'Reading document…' : isStreaming ? 'Composing reply…' : 'Online · Your AI Mentor'}
+            </p>
+          </div>
+        </div>
+        {/* Subtle branding */}
+        <div
+          className="flex items-center gap-1 px-2 py-1 rounded-lg"
+          style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.12)' }}
+        >
+          <Sparkles size={11} style={{ color: 'var(--primary)' }} />
+          <span className="text-[10px] font-semibold" style={{ color: 'var(--primary)', letterSpacing: '0.04em' }}>
+            Gemini
+          </span>
         </div>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto py-2.5 space-y-3" style={{ scrollbarWidth: 'thin' }}>
+      {/* ── Messages ────────────────────────────────────────── */}
+      <div
+        className="flex-1 overflow-y-auto py-3 space-y-4"
+        style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.06) transparent' }}
+      >
         <AnimatePresence initial={false}>
           {messages.map((msg, idx) => (
             <motion.div
               key={idx}
-              initial={{ opacity: 0, y: 10, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.3 }}
-              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+              className={`flex gap-2.5 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
+              {/* AI avatar */}
+              {msg.role === 'assistant' && (
+                <div
+                  className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-[10px] font-bold mt-0.5"
+                  style={{
+                    background: 'linear-gradient(135deg, #6366f1, #06b6d4)',
+                    color: 'white',
+                    boxShadow: '0 0 0 2px rgba(99, 102, 241, 0.15)',
+                  }}
+                >
+                  V
+                </div>
+              )}
+
               <div
-                className="max-w-[90%] md:max-w-[85%] rounded-2xl px-3.5 py-2.5 md:px-4 md:py-3"
-                style={{
-                  background: msg.role === 'user'
-                    ? 'linear-gradient(135deg, rgba(108,99,255,0.2), rgba(108,99,255,0.1))'
-                    : 'var(--surface)',
-                  border: `1px solid ${msg.role === 'user' ? 'rgba(108,99,255,0.2)' : 'var(--border-color)'}`,
-                }}
+                className="max-w-[88%] md:max-w-[82%] rounded-2xl"
+                style={
+                  msg.role === 'user'
+                    ? {
+                        background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+                        padding: '10px 14px',
+                        boxShadow: '0 2px 12px rgba(99, 102, 241, 0.25), 0 1px 3px rgba(0,0,0,0.2)',
+                        borderBottomRightRadius: '6px',
+                      }
+                    : {
+                        background: 'var(--surface)',
+                        border: '1px solid var(--border-color)',
+                        padding: '10px 14px',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.04)',
+                        borderBottomLeftRadius: '6px',
+                      }
+                }
               >
                 {msg.imageUrl && (
                   <img
                     src={msg.imageUrl}
                     alt="Attached"
-                    className="w-full max-h-[150px] object-contain rounded-lg mb-2"
+                    className="w-full max-h-[160px] object-contain rounded-xl mb-2.5"
                     style={{ background: 'rgba(0,0,0,0.2)' }}
                   />
                 )}
                 <div
-                  className="text-xs md:text-sm leading-relaxed whitespace-pre-wrap break-words overflow-hidden"
-                  style={{ color: 'var(--foreground)' }}
-                  dangerouslySetInnerHTML={{
-                    __html: msg.content
-                      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                      .replace(/\n/g, '<br/>')
-                  }}
+                  className="text-sm leading-relaxed break-words chat-content"
+                  style={{ color: msg.role === 'user' ? 'rgba(255,255,255,0.95)' : 'var(--foreground)' }}
+                  dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.content) }}
                 />
-                <span className="text-[10px] block mt-1.5" style={{ color: 'var(--muted)' }}>
+                <span
+                  className="text-[10px] block mt-1.5 select-none"
+                  style={{ color: msg.role === 'user' ? 'rgba(255,255,255,0.45)' : 'var(--muted)', opacity: 0.7 }}
+                >
                   {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
@@ -207,25 +278,41 @@ export default function ChatPanel({ userUid, userName }: ChatPanelProps) {
           ))}
         </AnimatePresence>
 
+        {/* Typing indicator */}
         {isLoading && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex justify-start"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-center gap-2.5 justify-start"
           >
-            <div className="glass-card px-3 py-2 flex items-center gap-2">
-              <div className="flex gap-1">
+            <div
+              className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-[10px] font-bold"
+              style={{
+                background: 'linear-gradient(135deg, #6366f1, #06b6d4)',
+                color: 'white',
+              }}
+            >
+              V
+            </div>
+            <div
+              className="px-4 py-3 rounded-2xl rounded-bl-md"
+              style={{
+                background: 'var(--surface)',
+                border: '1px solid var(--border-color)',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+              }}
+            >
+              <div className="flex gap-1.5 items-center">
                 {[0, 1, 2].map(i => (
                   <motion.div
                     key={i}
-                    className="w-2 h-2 rounded-full"
-                    style={{ background: '#6c63ff' }}
-                    animate={{ y: [0, -6, 0] }}
-                    transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15 }}
+                    className="w-1.5 h-1.5 rounded-full"
+                    style={{ background: 'var(--primary)' }}
+                    animate={{ y: [0, -5, 0], opacity: [0.5, 1, 0.5] }}
+                    transition={{ duration: 0.7, repeat: Infinity, delay: i * 0.15, ease: 'easeInOut' }}
                   />
                 ))}
               </div>
-              <span className="text-xs" style={{ color: 'var(--muted)' }}>VAYU is thinking...</span>
             </div>
           </motion.div>
         )}
@@ -233,7 +320,7 @@ export default function ChatPanel({ userUid, userName }: ChatPanelProps) {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Attached File Preview */}
+      {/* ── Attached File Preview ────────────────────────────── */}
       <AnimatePresence>
         {attachedFile && (
           <motion.div
@@ -242,55 +329,69 @@ export default function ChatPanel({ userUid, userName }: ChatPanelProps) {
             exit={{ opacity: 0, height: 0 }}
             className="pb-2"
           >
-            <div className="relative inline-flex items-center gap-3 p-2 rounded-xl" style={{ border: '1px solid var(--border-color)', background: 'var(--surface)' }}>
+            <div
+              className="relative inline-flex items-center gap-2.5 py-2 pl-2.5 pr-8 rounded-xl"
+              style={{ border: '1px solid var(--border-color)', background: 'var(--surface)' }}
+            >
               {attachedFile.isImage && attachedFile.previewUrl ? (
                 <img
                   src={attachedFile.previewUrl}
                   alt="Attached"
-                  className="h-12 w-12 rounded-lg object-cover"
+                  className="h-10 w-10 rounded-lg object-cover"
                 />
               ) : (
-                <div className="h-12 w-12 rounded-lg flex items-center justify-center" style={{ background: 'rgba(108, 99, 255, 0.2)', color: '#6c63ff' }}>
-                  <FileText size={24} />
+                <div
+                  className="h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{ background: 'rgba(99, 102, 241, 0.12)', color: 'var(--primary)' }}
+                >
+                  <FileText size={18} />
                 </div>
               )}
-              <div className="pr-6">
-                <p className="text-sm font-bold truncate max-w-[200px]">{attachedFile.file.name}</p>
-                <p className="text-xs text-[var(--muted)]">{(attachedFile.file.size / 1024 / 1024).toFixed(2)} MB</p>
+              <div>
+                <p className="text-xs font-semibold truncate max-w-[180px]" style={{ color: 'var(--foreground)' }}>
+                  {attachedFile.file.name}
+                </p>
+                <p className="text-[10px]" style={{ color: 'var(--muted)' }}>
+                  {(attachedFile.file.size / 1024 / 1024).toFixed(2)} MB
+                </p>
               </div>
               <button
                 onClick={() => setAttachedFile(null)}
-                className="absolute -top-2 -right-2 p-1 rounded-full"
+                className="absolute top-1.5 right-1.5 p-1 rounded-full"
                 style={{ background: 'var(--danger)', color: 'white', border: 'none', cursor: 'pointer' }}
               >
-                <Trash2 size={10} />
+                <Trash2 size={9} />
               </button>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Input Area */}
+      {/* ── Input Area ───────────────────────────────────────── */}
       <div
-        className="flex items-end gap-2 pt-2"
+        className="flex items-end gap-2 pt-2.5"
         style={{ borderTop: '1px solid var(--border-color)' }}
       >
+        {/* Attach button */}
         <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
+          whileHover={{ scale: 1.08 }}
+          whileTap={{ scale: 0.92 }}
           onClick={() => fileInputRef.current?.click()}
           disabled={isLoading}
-          className="p-2.5 rounded-xl flex-shrink-0 disabled:opacity-50"
+          className="p-2.5 rounded-xl flex-shrink-0 disabled:opacity-40"
           style={{
             background: 'var(--surface)',
             border: '1px solid var(--border-color)',
-            color: 'var(--primary)',
+            color: 'var(--muted)',
             cursor: 'pointer',
+            transition: 'all 0.15s ease',
           }}
           title="Upload Document or Image"
+          aria-label="Attach file"
         >
-          <Paperclip size={18} />
+          <Paperclip size={16} />
         </motion.button>
+
         <input
           ref={fileInputRef}
           type="file"
@@ -298,35 +399,49 @@ export default function ChatPanel({ userUid, userName }: ChatPanelProps) {
           className="hidden"
           onChange={handleFileAttach}
         />
+
+        {/* Textarea */}
         <div className="flex-1 relative">
           <textarea
+            ref={textareaRef}
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             disabled={isLoading}
-            placeholder={isLoading ? "VAYU is analyzing..." : "Ask VAYU anything..."}
+            placeholder={isLoading ? 'VAYU is analyzing…' : 'Ask VAYU anything…'}
             rows={1}
-            className="input-glass resize-none pr-12 text-sm disabled:opacity-50"
+            className="input-glass resize-none text-sm disabled:opacity-40"
             style={{
-              minHeight: '44px',
+              minHeight: '42px',
               maxHeight: '120px',
+              lineHeight: '1.5',
+              paddingTop: '10px',
+              paddingBottom: '10px',
             }}
           />
         </div>
+
+        {/* Send button */}
         <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
+          whileHover={{ scale: 1.06 }}
+          whileTap={{ scale: 0.92 }}
           onClick={handleSend}
           disabled={isLoading || isStreaming || (!input.trim() && !attachedFile)}
           className="p-2.5 rounded-xl flex-shrink-0 disabled:opacity-30"
           style={{
-            background: 'linear-gradient(135deg, #6c63ff, #8b5cf6)',
+            background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
             color: 'white',
             border: 'none',
             cursor: isLoading || isStreaming ? 'wait' : 'pointer',
+            boxShadow: '0 2px 8px rgba(99, 102, 241, 0.3)',
+            transition: 'all 0.15s ease',
           }}
+          aria-label="Send message"
         >
-          {isLoading || isStreaming ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+          {isLoading || isStreaming
+            ? <Loader2 size={16} className="animate-spin" />
+            : <Send size={16} />
+          }
         </motion.button>
       </div>
     </div>
