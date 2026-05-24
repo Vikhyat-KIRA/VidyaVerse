@@ -24,7 +24,11 @@ export default function DashboardPage() {
   const [user, setUser] = useState<AppUser | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [activePanel, setActivePanel] = useState<ActivePanel>('chat');
-  const [isDark, setIsDark] = useState(true);
+  // Read saved theme on first render — avoids flash
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    return localStorage.getItem('vidyaverse-is-dark') !== 'false';
+  });
   const [userName, setUserName] = useState('Student');
   const [userAim, setUserAim] = useState('Become the best version of yourself');
   const [userXp, setUserXp] = useState(0);
@@ -64,28 +68,43 @@ export default function DashboardPage() {
     return () => unsubscribe();
   }, []);
 
-  // Cmd/Ctrl+K — command palette
+  // Cmd/Ctrl+K and number-key shortcuts
   useEffect(() => {
     if (appView !== 'dashboard') return;
+    const panels: ActivePanel[] = ['chat', 'community', 'flashcards', 'flashforge', 'pomodoro', 'bossbattle', 'settings'];
     const handleKey = (e: KeyboardEvent) => {
+      // Don't fire when typing in an input/textarea
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         setShowCommandPalette(p => !p);
+        return;
       }
-      if (e.key === 'Escape') setShowCommandPalette(false);
+      if (e.key === 'Escape') {
+        setShowCommandPalette(false);
+        return;
+      }
+      // Number keys 1-7: switch panel
+      const idx = parseInt(e.key, 10);
+      if (idx >= 1 && idx <= panels.length && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        setActivePanel(panels[idx - 1]);
+        setShowCommandPalette(false);
+      }
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
   }, [appView]);
 
-
-  // Theme management
+  // Theme management — persist to localStorage
   useEffect(() => {
     if (isDark) {
       document.documentElement.classList.remove('light');
     } else {
       document.documentElement.classList.add('light');
     }
+    localStorage.setItem('vidyaverse-is-dark', isDark ? 'true' : 'false');
   }, [isDark]);
 
   const handleSignOut = async () => {

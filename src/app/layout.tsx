@@ -136,10 +136,15 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full" style={{ fontFamily: 'var(--font-sans), system-ui, sans-serif' }} suppressHydrationWarning>
-        {/* Restore custom theme from localStorage before React hydrates to prevent flash */}
+        {/* Restore theme class + CSS vars before React hydrates to prevent flash */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('vidyaverse-theme');if(t){var o=JSON.parse(t);var r=document.documentElement.style;Object.keys(o).forEach(function(k){r.setProperty(k,o[k])})}}catch(e){}})();`,
+            __html: `(function(){try{
+              var dark=localStorage.getItem('vidyaverse-is-dark');
+              if(dark==='false'){document.documentElement.classList.add('light');}
+              var t=localStorage.getItem('vidyaverse-theme');
+              if(t){var o=JSON.parse(t);var r=document.documentElement.style;Object.keys(o).forEach(function(k){r.setProperty(k,o[k])});}
+            }catch(e){}})();`,
           }}
         />
         {children}
