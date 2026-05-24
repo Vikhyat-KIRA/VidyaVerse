@@ -21,6 +21,10 @@ export interface ChatMessage {
   senderId: string;
   senderName: string;
   timestamp: unknown;
+  // Thread reply fields (optional)
+  replyToId?: string;
+  replyToText?: string;
+  replyToSenderName?: string;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -151,14 +155,26 @@ export async function joinRoomByCode(code: string, uid: string): Promise<Room> {
 /**
  * Send a message to a room
  */
-export async function sendMessage(roomId: string, text: string, senderId: string, senderName: string): Promise<void> {
+export async function sendMessage(
+  roomId: string,
+  text: string,
+  senderId: string,
+  senderName: string,
+  reply?: { replyToId: string; replyToText: string; replyToSenderName: string }
+): Promise<void> {
   const messagesRef = collection(db, 'rooms', roomId, 'messages');
-  await addDoc(messagesRef, {
+  const payload: Record<string, unknown> = {
     text,
     senderId,
     senderName,
     timestamp: serverTimestamp(),
-  });
+  };
+  if (reply) {
+    payload.replyToId = reply.replyToId;
+    payload.replyToText = reply.replyToText;
+    payload.replyToSenderName = reply.replyToSenderName;
+  }
+  await addDoc(messagesRef, payload);
 }
 
 /**
@@ -178,6 +194,9 @@ export function subscribeToMessages(roomId: string, callback: (messages: ChatMes
         senderId: data.senderId,
         senderName: data.senderName,
         timestamp: data.timestamp,
+        replyToId: data.replyToId,
+        replyToText: data.replyToText,
+        replyToSenderName: data.replyToSenderName,
       });
     });
     callback(messages);

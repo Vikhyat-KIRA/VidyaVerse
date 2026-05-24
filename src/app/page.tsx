@@ -16,9 +16,39 @@ import { ToastProvider } from '@/components/Toast';
 import ScoreCard from '@/components/ScoreCard';
 import { onAuthStateChanged, signOut, getUserProfile, type AppUser } from '@/lib/firebase';
 import { getUserFromSheet } from '@/actions/sheets';
-import { scheduleStreakReminder, updateLastVisit } from '@/lib/notifications';
+import { 
+  scheduleStreakReminder, 
+  updateLastVisit, 
+  registerServiceWorker, 
+  subscribeToPushNotifications, 
+  sendBrowserNotification 
+} from '@/lib/notifications';
+import { Room, ensureAutoRooms } from '@/lib/chat';
+import { collection, query, where, limit, orderBy, onSnapshot } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 type AppView = 'landing' | 'auth' | 'dashboard';
+
+export interface AppNotification {
+  id: string;
+  type: 'guild' | 'dm' | 'vayu';
+  title: string;
+  body: string;
+  timestamp: number;
+  read: boolean;
+  roomId?: string; // for guilds/dms
+}
+
+function formatTimeAgo(timestamp: number): string {
+  if (typeof window === 'undefined') return '';
+  const diff = Date.now() - timestamp;
+  if (diff < 60000) return 'just now';
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return new Date(timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
 
 export default function DashboardPage() {
   const [user, setUser] = useState<AppUser | null>(null);
@@ -32,6 +62,65 @@ export default function DashboardPage() {
   const [appView, setAppView] = useState<AppView>('landing');
   const [showScoreCard, setShowScoreCard] = useState(false);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
+
+  // Notification States
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [roomUnreadCounts, setRoomUnreadCounts] = useState<Record<string, number>>({});
+  const [unreadVayu, setUnreadVayu] = useState(false);
+  const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
+  const [showNotificationsDropdown, setShowNotificationsDropdown] = useState(false);
+  const [rooms, setRooms] = useState<Room[]>([]);
+
+  const totalUnreadNotifications = notifications.filter(n => !n.read).length;
+  const unreadCommunity = Object.values(roomUnreadCounts).reduce((sum, count) => sum + count, 0);
+
+  const handleMarkRoomRead = useCallback((roomId: string) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(`vidyaverse-room-read-${roomId}`, Date.now().toString());
+    }
+    setRoomUnreadCounts(prev => ({
+      ...prev,
+      [roomId]: 0
+    }));
+  }, []);
+
+  const handleMarkAllAsRead = useCallback(() => {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  }, []);
+
+  const handleNotificationItemClick = useCallback((notif: AppNotification) => {
+    setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, read: true } : n));
+    setShowNotificationsDropdown(false);
+
+    if (notif.type === 'vayu') {
+      setActivePanel('chat');
+      setUnreadVayu(false);
+    } else if (notif.type === 'guild' || notif.type === 'dm') {
+      setActivePanel('community');
+      if (notif.roomId) {
+        setActiveRoomId(notif.roomId);
+        handleMarkRoomRead(notif.roomId);
+      }
+    }
+  }, [handleMarkRoomRead]);
+
+  const handleVayuResponseComplete = useCallback((text: string) => {
+    if (activePanel !== 'chat') {
+      setUnreadVayu(true);
+      const timestamp = Date.now();
+      const notifId = `vayu-${timestamp}`;
+      const newNotif: AppNotification = {
+        id: notifId,
+        type: 'vayu',
+        title: '🤖 VAYU Mentor',
+        body: text.length > 60 ? `${text.slice(0, 60)}...` : text,
+        timestamp,
+        read: false
+      };
+      setNotifications(prev => [newNotif, ...prev]);
+      sendBrowserNotification('🤖 VAYU Mentor', text, 'vayu', '/chat');
+    }
+  }, [activePanel]);
 
   // Auth state listener
   useEffect(() => {
@@ -131,6 +220,187 @@ export default function DashboardPage() {
     }
     localStorage.setItem('vidyaverse-is-dark', isDark ? 'true' : 'false');
   }, [isDark]);
+
+  // Setup PWA Service Worker and Push Subscription
+  useEffect(() => {
+    if (!user) return;
+    
+    const initPwa = async () => {
+      await registerServiceWorker();
+      await subscribeToPushNotifications(user.uid);
+    };
+
+    initPwa();
+  }, [user]);
+
+  // Load rooms and listen to last messages in real-time
+  useEffect(() => {
+    if (!user) return;
+
+    let unsubscribes: (() => void)[] = [];
+    let isMounted = true;
+
+    const setupRoomsAndListeners = async () => {
+      try {
+        const profile = await getUserProfile(user.uid);
+        if (!isMounted) return;
+
+        // 1. Get Auto Rooms
+        let autoRooms: Room[] = [];
+        if (profile) {
+          autoRooms = await ensureAutoRooms(profile);
+        }
+
+        // 2. Set up real-time listener for Custom/DM rooms the user is in
+        const qCustom = query(collection(db, 'rooms'), where('members', 'array-contains', user.uid));
+        
+        const unsubCustom = onSnapshot(qCustom, (snapshot) => {
+          if (!isMounted) return;
+          
+          const customRooms: Room[] = [];
+          snapshot.forEach(doc => {
+            customRooms.push(doc.data() as Room);
+          });
+
+          const allRooms = [...autoRooms, ...customRooms];
+          setRooms(allRooms);
+
+          // For each room, register a listener for the last message
+          // Clean up previous message listeners
+          unsubscribes.forEach(unsub => {
+            if (unsub !== unsubCustom) unsub();
+          });
+          unsubscribes = [unsubCustom];
+
+          allRooms.forEach(room => {
+            const qMsg = query(
+              collection(db, 'rooms', room.id, 'messages'),
+              orderBy('timestamp', 'desc'),
+              limit(1)
+            );
+
+            const unsubMsg = onSnapshot(qMsg, (msgSnap) => {
+              if (msgSnap.empty) return;
+              const lastMsgDoc = msgSnap.docs[0];
+              const lastMsg = lastMsgDoc.data();
+              
+              // Skip if sent by current user
+              if (lastMsg.senderId === user.uid) return;
+
+              // Check if we should notify
+              const lastReadStr = localStorage.getItem(`vidyaverse-room-read-${room.id}`);
+              const lastReadTime = lastReadStr ? parseInt(lastReadStr, 10) : 0;
+              const msgTime = lastMsg.timestamp?.seconds 
+                ? lastMsg.timestamp.seconds * 1000 
+                : lastMsg.timestamp?.toMillis?.() || Date.now();
+
+              // If the message timestamp is newer than our last read time AND we are not currently viewing this room
+              if (msgTime > lastReadTime && activeRoomId !== room.id) {
+                // Increment unread count for this room
+                setRoomUnreadCounts(prev => ({
+                  ...prev,
+                  [room.id]: (prev[room.id] || 0) + 1
+                }));
+
+                // Add to notification history in page.tsx state
+                const notifId = lastMsgDoc.id || `${room.id}-${msgTime}`;
+                
+                setNotifications(prev => {
+                  if (prev.some(n => n.id === notifId)) return prev;
+
+                  const newNotif: AppNotification = {
+                    id: notifId,
+                    type: room.type === 'dm' ? 'dm' : 'guild',
+                    title: room.type === 'dm' ? `DM from ${lastMsg.senderName}` : `${room.name}`,
+                    body: `${lastMsg.senderName}: ${lastMsg.text}`,
+                    timestamp: msgTime,
+                    read: false,
+                    roomId: room.id
+                  };
+
+                  return [newNotif, ...prev];
+                });
+
+                // Trigger desktop system alert
+                sendBrowserNotification(
+                  room.type === 'dm' ? `💬 DM from ${lastMsg.senderName}` : `👥 ${room.name}`,
+                  lastMsg.text,
+                  room.id,
+                  `/community?room=${room.id}`
+                );
+              }
+            });
+
+            unsubscribes.push(unsubMsg);
+          });
+        });
+
+        unsubscribes.push(unsubCustom);
+      } catch (err) {
+        console.error('Error setting up room listeners:', err);
+      }
+    };
+
+    setupRoomsAndListeners();
+
+    return () => {
+      isMounted = false;
+      unsubscribes.forEach(unsub => unsub());
+    };
+  }, [user, activeRoomId]);
+
+  // Synchronize activePanel notification states
+  useEffect(() => {
+    if (activePanel === 'chat') {
+      setUnreadVayu(false);
+    }
+    if (activePanel !== 'community') {
+      setActiveRoomId(null);
+    }
+  }, [activePanel]);
+
+  // Handle click-navigation from browser notifications
+  useEffect(() => {
+    const handleNavigate = (url: string) => {
+      if (url.startsWith('/community')) {
+        setActivePanel('community');
+        const match = url.match(/[?&]room=([^&]+)/);
+        if (match && match[1]) {
+          const roomId = match[1];
+          setActiveRoomId(roomId);
+          handleMarkRoomRead(roomId);
+        }
+      } else if (url.startsWith('/chat')) {
+        setActivePanel('chat');
+        setUnreadVayu(false);
+      }
+    };
+
+    const handleCustomEvent = (e: Event) => {
+      const customEvent = e as CustomEvent<string>;
+      if (customEvent.detail) {
+        handleNavigate(customEvent.detail);
+      }
+    };
+
+    const handleSwMessage = (event: MessageEvent) => {
+      if (event.data && event.data.type === 'navigate') {
+        handleNavigate(event.data.url);
+      }
+    };
+
+    window.addEventListener('vidyaverse-navigate', handleCustomEvent);
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', handleSwMessage);
+    }
+
+    return () => {
+      window.removeEventListener('vidyaverse-navigate', handleCustomEvent);
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.removeEventListener('message', handleSwMessage);
+      }
+    };
+  }, [handleMarkRoomRead]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -247,6 +517,8 @@ export default function DashboardPage() {
           onToggleTheme={() => setIsDark(!isDark)}
           onOpenCommandPalette={() => setShowCommandPalette(true)}
           onShareScore={() => setShowScoreCard(true)}
+          unreadVayu={unreadVayu}
+          unreadCommunity={unreadCommunity}
         />
 
         {/* Main Content */}
@@ -255,12 +527,18 @@ export default function DashboardPage() {
             <AnimatePresence mode="wait">
               {activePanel === 'chat' && (
                 <motion.div key="chat" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }} className="h-full glass-card rounded-none md:rounded-[20px] border-x-0 md:border-x border-t-0 md:border-t p-3 md:p-5">
-                  <ChatPanel userUid={user!.uid} userName={userName} />
+                  <ChatPanel userUid={user!.uid} userName={userName} onResponseComplete={handleVayuResponseComplete} />
                 </motion.div>
               )}
               {activePanel === 'community' && (
                 <motion.div key="community" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }} className="h-full glass-card rounded-none md:rounded-[20px] border-x-0 md:border-x border-t-0 md:border-t p-3 md:p-5">
-                  <CommunityPanel userUid={user!.uid} userName={userName} />
+                  <CommunityPanel 
+                    userUid={user!.uid} 
+                    userName={userName} 
+                    roomUnreadCounts={roomUnreadCounts}
+                    onMarkRoomRead={handleMarkRoomRead}
+                    activeRoomId={activeRoomId}
+                  />
                 </motion.div>
               )}
               {activePanel === 'flashforge' && (
@@ -340,6 +618,173 @@ export default function DashboardPage() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Floating Bell Notification Center */}
+        {user && (
+          <div className="fixed top-4 right-4 z-[999] flex flex-col items-end">
+            <button
+              onClick={() => setShowNotificationsDropdown(p => !p)}
+              className="relative p-2.5 rounded-xl border transition-all duration-300 cursor-pointer hover:scale-105 active:scale-95 flex items-center justify-center"
+              style={{
+                background: 'rgba(255, 255, 255, 0.03)',
+                borderColor: 'var(--border-color)',
+                backdropFilter: 'blur(20px)',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+                color: 'var(--foreground)'
+              }}
+            >
+              {/* Bell SVG */}
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2.2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                className={`w-5 h-5 ${totalUnreadNotifications > 0 ? 'animate-bounce text-[var(--primary)]' : 'text-[var(--muted)]'}`}
+                style={{
+                  filter: totalUnreadNotifications > 0 ? 'drop-shadow(0 0 8px var(--primary-glow))' : 'none'
+                }}
+              >
+                <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+              </svg>
+
+              {/* Pulsing Badge */}
+              {totalUnreadNotifications > 0 && (
+                <span 
+                  className="absolute -top-1 -right-1 min-w-[15px] h-[15px] px-0.5 rounded-full text-[8px] font-extrabold flex items-center justify-center text-white"
+                  style={{
+                    background: 'var(--primary)',
+                    boxShadow: '0 0 8px var(--primary-glow)',
+                  }}
+                >
+                  {totalUnreadNotifications > 99 ? '99+' : totalUnreadNotifications}
+                </span>
+              )}
+            </button>
+
+            {/* Dropdown Container */}
+            <AnimatePresence>
+              {showNotificationsDropdown && (
+                <motion.div
+                  initial={{ opacity: 0, y: 12, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 12, scale: 0.96 }}
+                  transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+                  className="mt-3 w-80 rounded-2xl overflow-hidden shadow-2xl flex flex-col"
+                  style={{
+                    background: 'rgba(9, 10, 15, 0.95)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    backdropFilter: 'blur(40px)',
+                    maxHeight: '400px',
+                    boxShadow: '0 20px 50px rgba(0,0,0,0.5)'
+                  }}
+                >
+                  {/* Dropdown Header */}
+                  <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}>
+                    <h4 className="text-xs font-bold text-white flex items-center gap-1.5 uppercase tracking-wider">
+                      Inbox
+                      {totalUnreadNotifications > 0 && (
+                        <span 
+                          className="text-[9px] font-black px-2 py-0.5 rounded-full text-white"
+                          style={{
+                            background: 'var(--primary)',
+                            boxShadow: '0 0 6px var(--primary-glow)'
+                          }}
+                        >
+                          {totalUnreadNotifications} NEW
+                        </span>
+                      )}
+                    </h4>
+                    {notifications.length > 0 && (
+                      <button 
+                        onClick={handleMarkAllAsRead}
+                        className="text-[10px] font-extrabold text-[var(--primary)] hover:underline border-none bg-transparent cursor-pointer"
+                      >
+                        Clear All
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Dropdown Scroll Area */}
+                  <div className="flex-1 overflow-y-auto custom-scrollbar">
+                    {notifications.length === 0 ? (
+                      <div className="py-12 px-4 flex flex-col items-center justify-center text-center opacity-65">
+                        <svg 
+                          xmlns="http://www.w3.org/2000/svg" 
+                          viewBox="0 0 24 24" 
+                          fill="none" 
+                          stroke="currentColor" 
+                          strokeWidth="1.5" 
+                          strokeLinecap="round" 
+                          strokeLinejoin="round" 
+                          className="w-10 h-10 text-[var(--muted)] mb-2"
+                        >
+                          <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                          <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+                        </svg>
+                        <p className="text-xs font-bold text-white">All caught up!</p>
+                        <p className="text-[10px] text-[var(--muted)] mt-1">No recent notifications</p>
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-white/5">
+                        {notifications.map((notif) => (
+                          <button 
+                            key={notif.id}
+                            onClick={() => handleNotificationItemClick(notif)}
+                            className="w-full p-4 transition-colors cursor-pointer hover:bg-white/5 flex gap-3 text-left relative border-none bg-transparent"
+                            style={{
+                              background: notif.read ? 'transparent' : 'rgba(99, 102, 241, 0.04)'
+                            }}
+                          >
+                            {/* Unread Pill */}
+                            {!notif.read && (
+                              <span 
+                                className="absolute left-2 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full"
+                                style={{
+                                  background: 'var(--primary)',
+                                  boxShadow: '0 0 6px var(--primary-glow)'
+                                }}
+                              />
+                            )}
+                            
+                            {/* Graphic Icon */}
+                            <div 
+                              className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 text-white font-bold text-sm"
+                              style={{
+                                background: 
+                                  notif.type === 'vayu' 
+                                    ? 'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)' 
+                                    : notif.type === 'dm'
+                                    ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+                                    : 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
+                                marginLeft: notif.read ? '0' : '4px'
+                              }}
+                            >
+                              {notif.type === 'vayu' ? '🤖' : notif.type === 'dm' ? '💬' : '👥'}
+                            </div>
+
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between">
+                                <p className={`text-xs truncate pr-2 ${notif.read ? 'text-[var(--muted)] font-medium' : 'text-white font-bold'}`}>{notif.title}</p>
+                                <span className="text-[8px] text-[var(--muted)] whitespace-nowrap">
+                                  {formatTimeAgo(notif.timestamp)}
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-[var(--muted)] truncate mt-0.5">{notif.body}</p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
 
         {/* ── Share Scorecard Modal ─────────────────────── */}
         <AnimatePresence>

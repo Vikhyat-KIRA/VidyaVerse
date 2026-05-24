@@ -20,6 +20,8 @@ interface SidebarProps {
   onToggleTheme: () => void;
   onOpenCommandPalette?: () => void;
   onShareScore?: () => void;
+  unreadVayu?: boolean;
+  unreadCommunity?: number;
 }
 
 const navItems: { id: ActivePanel; label: string; icon: React.ReactNode }[] = [
@@ -43,6 +45,8 @@ export default function Sidebar({
   onToggleTheme,
   onOpenCommandPalette,
   onShareScore,
+  unreadVayu = false,
+  unreadCommunity = 0,
 }: SidebarProps) {
   return (
     <>
@@ -90,6 +94,28 @@ export default function Sidebar({
                 aria-label={item.label}
               >
                 {item.icon}
+
+                {/* Notification Badges (Desktop) */}
+                {item.id === 'chat' && unreadVayu && (
+                  <span 
+                    className="absolute top-2 right-2 w-2 h-2 rounded-full animate-pulse"
+                    style={{
+                      background: 'var(--accent)',
+                      boxShadow: '0 0 8px var(--accent-glow)',
+                    }}
+                  />
+                )}
+                {item.id === 'community' && unreadCommunity > 0 && (
+                  <span 
+                    className="absolute top-1.5 right-1.5 min-w-[14px] h-[14px] px-1 rounded-full text-[8px] font-bold flex items-center justify-center text-white"
+                    style={{
+                      background: 'var(--primary)',
+                      boxShadow: '0 0 8px var(--primary-glow)',
+                    }}
+                  >
+                    {unreadCommunity > 99 ? '99+' : unreadCommunity}
+                  </span>
+                )}
 
                 {/* Active indicator pill */}
                 {isActive && (
@@ -242,7 +268,7 @@ export default function Sidebar({
                 key={item.id}
                 whileTap={{ scale: 0.88 }}
                 onClick={() => onPanelChange(item.id)}
-                className="flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-xl flex-shrink-0 transition-colors"
+                className="relative flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-xl flex-shrink-0 transition-colors"
                 style={{
                   background: isActive ? 'rgba(99, 102, 241, 0.12)' : 'transparent',
                   color: isActive ? '#818cf8' : 'var(--muted)',
@@ -251,7 +277,33 @@ export default function Sidebar({
                   minWidth: '52px',
                 }}
               >
-                {item.icon}
+                <div className="relative">
+                  {item.icon}
+
+                  {/* Notification Badges (Mobile) */}
+                  {item.id === 'chat' && unreadVayu && (
+                    <span 
+                      className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full animate-pulse"
+                      style={{
+                        background: 'var(--accent)',
+                        boxShadow: '0 0 8px var(--accent-glow)',
+                        border: '1.5px solid var(--mobile-nav-bg)'
+                      }}
+                    />
+                  )}
+                  {item.id === 'community' && unreadCommunity > 0 && (
+                    <span 
+                      className="absolute -top-1 -right-1.5 min-w-[12px] h-[12px] px-0.5 rounded-full text-[7px] font-bold flex items-center justify-center text-white"
+                      style={{
+                        background: 'var(--primary)',
+                        boxShadow: '0 0 8px var(--primary-glow)',
+                        border: '1px solid var(--mobile-nav-bg)'
+                      }}
+                    >
+                      {unreadCommunity > 99 ? '99+' : unreadCommunity}
+                    </span>
+                  )}
+                </div>
                 <span className="text-[9px] font-semibold">{item.label}</span>
               </motion.button>
             );
