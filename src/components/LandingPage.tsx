@@ -148,7 +148,7 @@ export default function LandingPage({ onEnterApp }: LandingPageProps) {
 
       {/* ══════════════ HERO SECTION ══════════════ */}
       <section className="relative min-h-screen flex flex-col items-center justify-center text-center px-4 pt-20 pb-16 overflow-hidden">
-        {/* Background glow effects */}
+        {/* Background glow blobs */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <motion.div
             animate={{ x: [0, 40, -20, 0], y: [0, -30, 20, 0] }}
@@ -164,7 +164,62 @@ export default function LandingPage({ onEnterApp }: LandingPageProps) {
           />
         </div>
 
-        {/* Hero Content */}
+        {/* ── Large ghost logo watermark ── */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 2, ease: 'easeOut' }}
+            style={{ opacity: 0.018 }}
+          >
+            <NextImage
+              src="/logo.png"
+              alt=""
+              width={580}
+              height={440}
+              className="logo-invert select-none"
+              style={{ objectFit: 'contain' }}
+              priority
+            />
+          </motion.div>
+        </div>
+
+        {/* ── Animated horizontal scrolling slogan ── */}
+        <div className="absolute bottom-20 left-0 right-0 overflow-hidden pointer-events-none">
+          <motion.div
+            animate={{ x: ['0%', '-50%'] }}
+            transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}
+            className="flex whitespace-nowrap gap-10 text-[10px] font-bold uppercase tracking-[0.3em]"
+            style={{ color: 'rgba(255,255,255,0.09)' }}
+          >
+            {/* Duplicate for seamless loop */}
+            {Array.from({ length: 2 }).map((_, gi) => (
+              <span key={gi} className="flex gap-10">
+                {[
+                  'Become an Academic Weapon',
+                  '·',
+                  'AI-Powered Study',
+                  '·',
+                  'Defeat the Boss',
+                  '·',
+                  'Level Up Every Day',
+                  '·',
+                  'VAYU Knows You',
+                  '·',
+                  'Spaced Repetition',
+                  '·',
+                  'Deep Focus Mode',
+                  '·',
+                  'Flash-Forge Vision',
+                  '·',
+                ].map((word, i) => (
+                  <span key={i}>{word}</span>
+                ))}
+              </span>
+            ))}
+          </motion.div>
+        </div>
+
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}

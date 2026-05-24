@@ -21,7 +21,7 @@ export interface SheetUserRow {
 
 // ─── Auth Helper ─────────────────────────────────────────────────────────────
 
-function getGoogleAuth() {
+async function getAuthClient() {
   const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
   const key = process.env.GOOGLE_PRIVATE_KEY;
 
@@ -31,11 +31,15 @@ function getGoogleAuth() {
     );
   }
 
-  return new google.auth.JWT({
+  const auth = new google.auth.JWT({
     email,
     key: key.replace(/\\n/g, '\n'), // Handle escaped newlines in env vars
     scopes: ['https://www.googleapis.com/auth/spreadsheets'],
   });
+
+  // Force a fresh short-lived token every time — prevents invalid_grant on cached tokens
+  await auth.authorize();
+  return auth;
 }
 
 function getSheetId(): string {
@@ -61,7 +65,7 @@ export async function syncProfileToSheet(profile: {
   school: string;
   aim: string;
 }): Promise<void> {
-  const auth = getGoogleAuth();
+  const auth = await getAuthClient();
   const sheets = google.sheets({ version: 'v4', auth });
   const sheetId = getSheetId();
 
@@ -170,7 +174,7 @@ export async function getUserContextFromSheet(uid: string): Promise<{
   board: string;
   name: string;
 } | null> {
-  const auth = getGoogleAuth();
+  const auth = await getAuthClient();
   const sheets = google.sheets({ version: 'v4', auth });
   const sheetId = getSheetId();
 
@@ -218,7 +222,7 @@ export async function getUserSchool(uid: string): Promise<string> {
  * Get full user row from the sheet
  */
 export async function getUserFromSheet(uid: string): Promise<SheetUserRow | null> {
-  const auth = getGoogleAuth();
+  const auth = await getAuthClient();
   const sheets = google.sheets({ version: 'v4', auth });
   const sheetId = getSheetId();
 
@@ -256,7 +260,7 @@ export async function updateUserFieldInSheet(
   field: keyof Omit<SheetUserRow, 'uid' | 'createdAt'>,
   value: string
 ): Promise<void> {
-  const auth = getGoogleAuth();
+  const auth = await getAuthClient();
   const sheets = google.sheets({ version: 'v4', auth });
   const sheetId = getSheetId();
 
