@@ -36,6 +36,12 @@
   --radius: 16px;
   --glass-blur: 20px;
   --glass-opacity: 0.035;
+  /* Sidebar */
+  --sidebar-bg: rgba(9, 10, 15, 0.88);
+  --sidebar-border: rgba(255, 255, 255, 0.055);
+  --sidebar-separator: rgba(255, 255, 255, 0.06);
+  --mobile-nav-bg: rgba(9, 10, 15, 0.93);
+  --tooltip-bg: rgba(15, 17, 25, 0.92);
 }
 
 /* ========== LIGHT MODE ========== */
@@ -52,6 +58,12 @@
   --muted: #94a3b8;
   --danger: #ef4444;
   --success: #10b981;
+  /* Sidebar */
+  --sidebar-bg: rgba(248, 250, 252, 0.92);
+  --sidebar-border: rgba(15, 23, 42, 0.08);
+  --sidebar-separator: rgba(15, 23, 42, 0.06);
+  --mobile-nav-bg: rgba(248, 250, 252, 0.96);
+  --tooltip-bg: rgba(15, 23, 42, 0.9);
 }
 
 /* ========== BASE STYLES ========== */

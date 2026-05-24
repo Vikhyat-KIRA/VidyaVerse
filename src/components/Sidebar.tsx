@@ -50,11 +50,11 @@ export default function Sidebar({
       <aside
         className="sidebar-desktop fixed left-0 top-0 bottom-0 w-[68px] flex flex-col items-center py-3 z-50"
         style={{
-          background: 'rgba(9, 10, 15, 0.88)',
+          background: 'var(--sidebar-bg)',
           backdropFilter: 'blur(24px) saturate(180%)',
           WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-          borderRight: '1px solid rgba(255, 255, 255, 0.055)',
-          boxShadow: '1px 0 0 0 rgba(255,255,255,0.03)',
+          borderRight: '1px solid var(--sidebar-border)',
+          boxShadow: '1px 0 0 0 rgba(0,0,0,0.04)',
         }}
       >
         {/* Logo / Orb */}
@@ -63,7 +63,7 @@ export default function Sidebar({
         </div>
 
         {/* Thin separator */}
-        <div className="w-8 h-px mb-3" style={{ background: 'rgba(255,255,255,0.06)' }} />
+        <div className="w-8 h-px mb-3" style={{ background: 'var(--sidebar-separator)' }} />
 
         {/* Nav Items */}
         <nav className="flex-1 flex flex-col items-center gap-1 w-full px-2">
@@ -105,10 +105,10 @@ export default function Sidebar({
                 <div
                   className="absolute left-full ml-3 px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-150 translate-x-1 group-hover:translate-x-0"
                   style={{
-                    background: 'rgba(15, 17, 25, 0.92)',
-                    color: 'rgba(241, 245, 249, 0.9)',
+                    background: 'var(--tooltip-bg)',
+                    color: 'var(--foreground)',
                     backdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(255,255,255,0.07)',
+                    border: '1px solid var(--sidebar-border)',
                     boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
                     zIndex: 100,
                   }}
@@ -123,7 +123,7 @@ export default function Sidebar({
         {/* Bottom Actions */}
         <div className="flex flex-col items-center gap-2 pb-1 w-full px-2">
           {/* Thin separator */}
-          <div className="w-8 h-px mb-1" style={{ background: 'rgba(255,255,255,0.06)' }} />
+          <div className="w-8 h-px mb-1" style={{ background: 'var(--sidebar-separator)' }} />
 
           {/* XP & Streak */}
           <div className="flex flex-col items-center gap-1.5 w-full">
@@ -169,7 +169,7 @@ export default function Sidebar({
               whileHover={{ scale: 1.05 }}
               onClick={onOpenCommandPalette}
               className="w-full flex items-center justify-center p-1.5 rounded-lg"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', cursor: 'pointer' }}
+              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--sidebar-border)', cursor: 'pointer' }}
               title="Command Palette (Cmd+K)"
             >
               <span className="text-[9px] font-bold font-mono" style={{ color: 'var(--muted)' }}>⌘K</span>
@@ -229,9 +229,9 @@ export default function Sidebar({
       <nav
         className="mobile-nav fixed bottom-0 left-0 right-0 z-50 px-2 py-1.5"
         style={{
-          background: 'rgba(9, 10, 15, 0.93)',
+          background: 'var(--mobile-nav-bg)',
           backdropFilter: 'blur(24px) saturate(180%)',
-          borderTop: '1px solid rgba(255, 255, 255, 0.055)',
+          borderTop: '1px solid var(--sidebar-border)',
         }}
       >
         <div className="flex items-center justify-around overflow-x-auto no-scrollbar w-full py-0.5">
