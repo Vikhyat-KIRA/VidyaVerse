@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import Sidebar, { type ActivePanel } from '@/components/Sidebar';
 import ChatPanel from '@/components/ChatPanel';
@@ -12,8 +12,11 @@ import AuthScreen from '@/components/AuthScreen';
 import FlashcardsPanel from '@/components/FlashcardsPanel';
 import BossBattlePanel from '@/components/BossBattlePanel';
 import LandingPage from '@/components/LandingPage';
+import { ToastProvider } from '@/components/Toast';
+import ScoreCard from '@/components/ScoreCard';
 import { onAuthStateChanged, signOut, getUserProfile, type AppUser } from '@/lib/firebase';
 import { getUserFromSheet } from '@/actions/sheets';
+import { scheduleStreakReminder, updateLastVisit } from '@/lib/notifications';
 
 type AppView = 'landing' | 'auth' | 'dashboard';
 
@@ -27,6 +30,8 @@ export default function DashboardPage() {
   const [userXp, setUserXp] = useState(0);
   const [userStreak, setUserStreak] = useState(0);
   const [appView, setAppView] = useState<AppView>('landing');
+  const [showScoreCard, setShowScoreCard] = useState(false);
+  const [showCommandPalette, setShowCommandPalette] = useState(false);
 
   // Auth state listener
   useEffect(() => {
@@ -36,27 +41,43 @@ export default function DashboardPage() {
 
       if (firebaseUser) {
         setAppView('dashboard');
-        // Load user profile data from Firestore
         getUserProfile(firebaseUser.uid).then(profile => {
           if (profile) {
             setUserName(profile.name);
             setUserAim(profile.aim);
             setUserXp(profile.xp || 0);
             setUserStreak(profile.streak || 0);
+            // Schedule streak reminder after we have the name
+            scheduleStreakReminder(profile.name || 'Student');
           }
         });
-        // Also check Google Sheets for the latest context
         getUserFromSheet(firebaseUser.uid).then(sheetData => {
           if (sheetData) {
             setUserName(sheetData.name);
             setUserAim(sheetData.aim);
           }
         });
+        updateLastVisit();
       }
     });
 
     return () => unsubscribe();
   }, []);
+
+  // Cmd/Ctrl+K — command palette
+  useEffect(() => {
+    if (appView !== 'dashboard') return;
+    const handleKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setShowCommandPalette(p => !p);
+      }
+      if (e.key === 'Escape') setShowCommandPalette(false);
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [appView]);
+
 
   // Theme management
   useEffect(() => {
@@ -141,139 +162,153 @@ export default function DashboardPage() {
   }
 
   // Dashboard (authenticated)
+  const PANEL_LIST: { id: ActivePanel; label: string; shortcut: string }[] = [
+    { id: 'chat', label: 'VAYU Chat', shortcut: '1' },
+    { id: 'community', label: 'Guilds', shortcut: '2' },
+    { id: 'flashcards', label: 'Flashcards', shortcut: '3' },
+    { id: 'flashforge', label: 'Flash-Forge', shortcut: '4' },
+    { id: 'pomodoro', label: 'Pomodoro', shortcut: '5' },
+    { id: 'bossbattle', label: 'Boss Battle', shortcut: '6' },
+    { id: 'settings', label: 'Settings', shortcut: '7' },
+  ];
+
   return (
-    <div className="h-screen flex bg-grain" style={{ background: 'var(--background)' }}>
-      {/* Ambient background blobs */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <motion.div
-          animate={{ x: [0, 60, -30, 0], y: [0, -40, 25, 0] }}
-          transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute -top-32 right-0 w-[700px] h-[700px] rounded-full"
-          style={{
-            background: 'radial-gradient(circle, rgba(99,102,241,0.06), transparent 65%)',
-          }}
-        />
-        <motion.div
-          animate={{ x: [0, -50, 30, 0], y: [0, 35, -25, 0] }}
-          transition={{ duration: 28, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute -bottom-32 left-16 w-[600px] h-[600px] rounded-full"
-          style={{
-            background: 'radial-gradient(circle, rgba(6,182,212,0.05), transparent 65%)',
-          }}
-        />
-      </div>
-
-      {/* Sidebar */}
-      <Sidebar
-        activePanel={activePanel}
-        onPanelChange={setActivePanel}
-        userName={userName}
-        userXp={userXp}
-        userStreak={userStreak}
-        onSignOut={handleSignOut}
-        isDark={isDark}
-        onToggleTheme={() => setIsDark(!isDark)}
-      />
-
-      {/* Main Content */}
-      <main className="flex-1 ml-0 md:ml-[68px] pb-20 md:pb-0 relative z-10">
-        <div className="h-full p-0 md:p-5">
-          <AnimatePresence mode="wait">
-            {activePanel === 'chat' && (
-              <motion.div
-                key="chat"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.25 }}
-                className="h-full glass-card rounded-none md:rounded-[20px] border-x-0 md:border-x border-t-0 md:border-t p-3 md:p-5"
-              >
-                <ChatPanel userUid={user!.uid} userName={userName} />
-              </motion.div>
-            )}
-
-            {activePanel === 'community' && (
-              <motion.div
-                key="community"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.25 }}
-                className="h-full glass-card rounded-none md:rounded-[20px] border-x-0 md:border-x border-t-0 md:border-t p-3 md:p-5"
-              >
-                <CommunityPanel userUid={user!.uid} userName={userName} />
-              </motion.div>
-            )}
-
-            {activePanel === 'flashforge' && (
-              <motion.div
-                key="flashforge"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.25 }}
-                className="h-full glass-card rounded-none md:rounded-[20px] border-x-0 md:border-x border-t-0 md:border-t p-3 md:p-5"
-              >
-                <FlashForge userUid={user!.uid} />
-              </motion.div>
-            )}
-
-            {activePanel === 'pomodoro' && (
-              <motion.div
-                key="pomodoro"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.25 }}
-                className="h-full glass-card rounded-none md:rounded-[20px] border-x-0 md:border-x border-t-0 md:border-t p-3 md:p-5"
-              >
-                <PomodoroCoach userUid={user!.uid} userName={userName} userAim={userAim} />
-              </motion.div>
-            )}
-
-            {activePanel === 'flashcards' && (
-              <motion.div
-                key="flashcards"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.25 }}
-                className="h-full glass-card rounded-none md:rounded-[20px] border-x-0 md:border-x border-t-0 md:border-t p-3 md:p-5"
-              >
-                <FlashcardsPanel userUid={user!.uid} />
-              </motion.div>
-            )}
-
-            {activePanel === 'bossbattle' && (
-              <motion.div
-                key="bossbattle"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.25 }}
-                className="h-full glass-card rounded-none md:rounded-[20px] border-x-0 md:border-x border-t-0 md:border-t p-3 md:p-5"
-              >
-                <BossBattlePanel userUid={user!.uid} />
-              </motion.div>
-            )}
-
-            {activePanel === 'settings' && (
-              <motion.div
-                key="settings"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.25 }}
-                className="h-full glass-card rounded-none md:rounded-[20px] border-x-0 md:border-x border-t-0 md:border-t p-3 md:p-5"
-              >
-                <SettingsPanel userUid={user!.uid} />
-              </motion.div>
-            )}
-          </AnimatePresence>
+    <ToastProvider>
+      <div className="h-screen flex bg-grain" style={{ background: 'var(--background)' }}>
+        {/* Ambient background blobs */}
+        <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+          <motion.div
+            animate={{ x: [0, 60, -30, 0], y: [0, -40, 25, 0] }}
+            transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
+            className="absolute -top-32 right-0 w-[700px] h-[700px] rounded-full"
+            style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.06), transparent 65%)' }}
+          />
+          <motion.div
+            animate={{ x: [0, -50, 30, 0], y: [0, 35, -25, 0] }}
+            transition={{ duration: 28, repeat: Infinity, ease: 'easeInOut' }}
+            className="absolute -bottom-32 left-16 w-[600px] h-[600px] rounded-full"
+            style={{ background: 'radial-gradient(circle, rgba(6,182,212,0.05), transparent 65%)' }}
+          />
         </div>
-      </main>
 
-    </div>
+        {/* Sidebar */}
+        <Sidebar
+          activePanel={activePanel}
+          onPanelChange={setActivePanel}
+          userName={userName}
+          userXp={userXp}
+          userStreak={userStreak}
+          onSignOut={handleSignOut}
+          isDark={isDark}
+          onToggleTheme={() => setIsDark(!isDark)}
+          onOpenCommandPalette={() => setShowCommandPalette(true)}
+          onShareScore={() => setShowScoreCard(true)}
+        />
+
+        {/* Main Content */}
+        <main className="flex-1 ml-0 md:ml-[68px] pb-20 md:pb-0 relative z-10">
+          <div className="h-full p-0 md:p-5">
+            <AnimatePresence mode="wait">
+              {activePanel === 'chat' && (
+                <motion.div key="chat" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }} className="h-full glass-card rounded-none md:rounded-[20px] border-x-0 md:border-x border-t-0 md:border-t p-3 md:p-5">
+                  <ChatPanel userUid={user!.uid} userName={userName} />
+                </motion.div>
+              )}
+              {activePanel === 'community' && (
+                <motion.div key="community" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }} className="h-full glass-card rounded-none md:rounded-[20px] border-x-0 md:border-x border-t-0 md:border-t p-3 md:p-5">
+                  <CommunityPanel userUid={user!.uid} userName={userName} />
+                </motion.div>
+              )}
+              {activePanel === 'flashforge' && (
+                <motion.div key="flashforge" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }} className="h-full glass-card rounded-none md:rounded-[20px] border-x-0 md:border-x border-t-0 md:border-t p-3 md:p-5">
+                  <FlashForge userUid={user!.uid} />
+                </motion.div>
+              )}
+              {activePanel === 'pomodoro' && (
+                <motion.div key="pomodoro" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }} className="h-full glass-card rounded-none md:rounded-[20px] border-x-0 md:border-x border-t-0 md:border-t p-3 md:p-5">
+                  <PomodoroCoach userUid={user!.uid} userName={userName} userAim={userAim} />
+                </motion.div>
+              )}
+              {activePanel === 'flashcards' && (
+                <motion.div key="flashcards" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }} className="h-full glass-card rounded-none md:rounded-[20px] border-x-0 md:border-x border-t-0 md:border-t p-3 md:p-5">
+                  <FlashcardsPanel userUid={user!.uid} />
+                </motion.div>
+              )}
+              {activePanel === 'bossbattle' && (
+                <motion.div key="bossbattle" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }} className="h-full glass-card rounded-none md:rounded-[20px] border-x-0 md:border-x border-t-0 md:border-t p-3 md:p-5">
+                  <BossBattlePanel userUid={user!.uid} />
+                </motion.div>
+              )}
+              {activePanel === 'settings' && (
+                <motion.div key="settings" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }} className="h-full glass-card rounded-none md:rounded-[20px] border-x-0 md:border-x border-t-0 md:border-t p-3 md:p-5">
+                  <SettingsPanel userUid={user!.uid} />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </main>
+
+        {/* ── Command Palette (Cmd+K) ──────────────────── */}
+        <AnimatePresence>
+          {showCommandPalette && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[9998] flex items-start justify-center pt-[15vh]"
+              style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}
+              onClick={() => setShowCommandPalette(false)}
+            >
+              <motion.div
+                initial={{ opacity: 0, y: -12, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -12, scale: 0.97 }}
+                transition={{ type: 'spring', stiffness: 500, damping: 40 }}
+                className="w-full max-w-sm rounded-2xl overflow-hidden"
+                style={{ border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(9,10,15,0.96)', backdropFilter: 'blur(40px)', boxShadow: '0 24px 64px rgba(0,0,0,0.5)' }}
+                onClick={e => e.stopPropagation()}
+              >
+                <div className="px-4 pt-4 pb-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                  <p className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>Switch Panel</p>
+                </div>
+                <div className="py-2">
+                  {PANEL_LIST.map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => { setActivePanel(p.id); setShowCommandPalette(false); }}
+                      className="w-full flex items-center justify-between px-4 py-2.5 transition-colors text-left"
+                      style={{
+                        background: activePanel === p.id ? 'rgba(99,102,241,0.1)' : 'transparent',
+                        color: activePanel === p.id ? '#818cf8' : 'var(--foreground)',
+                        border: 'none', cursor: 'pointer',
+                      }}
+                    >
+                      <span className="text-sm font-medium">{p.label}</span>
+                      <kbd className="text-[10px] px-1.5 py-0.5 rounded font-mono" style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--muted)', border: '1px solid rgba(255,255,255,0.06)' }}>{p.shortcut}</kbd>
+                    </button>
+                  ))}
+                </div>
+                <div className="px-4 py-2.5 flex items-center justify-between" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                  <span className="text-[10px]" style={{ color: 'var(--muted)' }}>Press number key to jump</span>
+                  <kbd className="text-[10px] px-1.5 py-0.5 rounded font-mono" style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--muted)', border: '1px solid rgba(255,255,255,0.06)' }}>Esc</kbd>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ── Share Scorecard Modal ─────────────────────── */}
+        <AnimatePresence>
+          {showScoreCard && (
+            <ScoreCard
+              userName={userName}
+              userXp={userXp}
+              userStreak={userStreak}
+              onClose={() => setShowScoreCard(false)}
+            />
+          )}
+        </AnimatePresence>
+      </div>
+    </ToastProvider>
   );
 }
-

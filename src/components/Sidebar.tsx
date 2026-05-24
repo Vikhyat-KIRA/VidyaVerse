@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import { 
   MessageSquare, Zap, Timer, Settings, LogOut, Sun, Moon,
-  Users, Flame, Star, Layers, Swords
+  Users, Flame, Star, Layers, Swords, Share2, Command
 } from 'lucide-react';
 import VayuOrb from './VayuOrb';
 
@@ -18,6 +18,8 @@ interface SidebarProps {
   onSignOut: () => void;
   isDark: boolean;
   onToggleTheme: () => void;
+  onOpenCommandPalette?: () => void;
+  onShareScore?: () => void;
 }
 
 const navItems: { id: ActivePanel; label: string; icon: React.ReactNode }[] = [
@@ -39,6 +41,8 @@ export default function Sidebar({
   onSignOut,
   isDark,
   onToggleTheme,
+  onOpenCommandPalette,
+  onShareScore,
 }: SidebarProps) {
   return (
     <>
@@ -144,6 +148,33 @@ export default function Sidebar({
               </span>
             </motion.div>
           </div>
+
+          {/* Share scorecard button */}
+          {onShareScore && (
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={onShareScore}
+              className="p-2.5 rounded-xl transition-colors w-full flex justify-center"
+              style={{ background: 'transparent', color: 'var(--muted)', border: 'none', cursor: 'pointer' }}
+              title="Share Scorecard"
+            >
+              <Share2 size={15} />
+            </motion.button>
+          )}
+
+          {/* Cmd+K hint */}
+          {onOpenCommandPalette && (
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              onClick={onOpenCommandPalette}
+              className="w-full flex items-center justify-center p-1.5 rounded-lg"
+              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', cursor: 'pointer' }}
+              title="Command Palette (Cmd+K)"
+            >
+              <span className="text-[9px] font-bold font-mono" style={{ color: 'var(--muted)' }}>⌘K</span>
+            </motion.button>
+          )}
 
           {/* Theme Toggle */}
           <motion.button

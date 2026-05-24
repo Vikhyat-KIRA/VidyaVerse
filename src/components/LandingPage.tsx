@@ -91,6 +91,26 @@ export default function LandingPage({ onEnterApp }: LandingPageProps) {
 
   return (
     <div className="min-h-screen bg-grain" style={{ background: 'var(--background)', overflow: 'auto' }}>
+
+      {/* ── Persistent logo watermark (fixed behind entire landing page) ── */}
+      <div className="fixed inset-0 flex items-center justify-center pointer-events-none overflow-hidden z-0">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 0.035 }}
+          transition={{ duration: 2.5, ease: 'easeOut' }}
+        >
+          <NextImage
+            src="/logo.png"
+            alt=""
+            width={900}
+            height={700}
+            className="select-none logo-invert"
+            style={{ objectFit: 'contain' }}
+            priority
+          />
+        </motion.div>
+      </div>
+
       {/* ══════════════ NAV BAR ══════════════ */}
       <motion.nav
         initial={{ y: -20, opacity: 0 }}
@@ -164,35 +184,14 @@ export default function LandingPage({ onEnterApp }: LandingPageProps) {
           />
         </div>
 
-        {/* ── Large ghost logo watermark ── */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 2, ease: 'easeOut' }}
-            style={{ opacity: 0.018 }}
-          >
-            <NextImage
-              src="/logo.png"
-              alt=""
-              width={580}
-              height={440}
-              className="logo-invert select-none"
-              style={{ objectFit: 'contain' }}
-              priority
-            />
-          </motion.div>
-        </div>
-
         {/* ── Animated horizontal scrolling slogan ── */}
         <div className="absolute bottom-20 left-0 right-0 overflow-hidden pointer-events-none">
           <motion.div
             animate={{ x: ['0%', '-50%'] }}
             transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}
             className="flex whitespace-nowrap gap-10 text-[10px] font-bold uppercase tracking-[0.3em]"
-            style={{ color: 'rgba(255,255,255,0.09)' }}
+            style={{ color: 'rgba(255,255,255,0.07)' }}
           >
-            {/* Duplicate for seamless loop */}
             {Array.from({ length: 2 }).map((_, gi) => (
               <span key={gi} className="flex gap-10">
                 {[

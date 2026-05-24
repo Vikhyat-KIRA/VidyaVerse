@@ -1,21 +1,33 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { Swords, Trophy, Loader2, Play, ImagePlus, X, BookOpen } from 'lucide-react';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Swords, Trophy, Loader2, Play, ImagePlus, X, BookOpen, Clock, ChevronDown, ChevronUp } from 'lucide-react';
+import { doc, getDoc, setDoc, collection, getDocs, orderBy, query } from 'firebase/firestore';
 import { db, getUserProfile } from '@/lib/firebase';
 import { generateDailyBossChallenge, evaluateBossChallengeAnswer } from '@/lib/gemini';
 import { awardXp } from '@/lib/exp';
+import { useToast } from '@/components/Toast';
 
 interface BossBattlePanelProps {
   userUid: string;
 }
 
+interface BattleRecord {
+  date: string;
+  topic: string;
+  passed: boolean;
+  attempts: number;
+}
+
 export default function BossBattlePanel({ userUid }: BossBattlePanelProps) {
+  const toast = useToast();
   const [loading, setLoading] = useState(true);
   const [summoning, setSummoning] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [history, setHistory] = useState<BattleRecord[]>([]);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
   
   // Setup state (topic + optional image)
   const [setupMode, setSetupMode] = useState(true);
@@ -116,7 +128,7 @@ export default function BossBattlePanel({ userUid }: BossBattlePanelProps) {
       setSetupMode(false);
     } catch (e) {
       console.error(e);
-      alert("Failed to summon Boss: " + (e as Error).message);
+      toast.error('Failed to summon Boss: ' + (e as Error).message);
     } finally {
       setSummoning(false);
     }
@@ -146,13 +158,12 @@ export default function BossBattlePanel({ userUid }: BossBattlePanelProps) {
       setFeedback(res.feedback);
 
       if (res.passed) {
-        // Award XP! Big +50 XP reward!
         await awardXp(userUid, 50);
-        alert("🏆 VICTORY! You defeated VAYU in today's Boss Battle! +50 XP Awarded!");
+        toast.success('🏆 VICTORY! You defeated VAYU’s Boss Battle! +50 XP Awarded!');
       }
     } catch (e) {
       console.error(e);
-      alert("Evaluation failed: " + (e as Error).message);
+      toast.error('Evaluation failed: ' + (e as Error).message);
     } finally {
       setSubmitting(false);
     }
@@ -168,6 +179,32 @@ export default function BossBattlePanel({ userUid }: BossBattlePanelProps) {
     setTopic('');
     setAttachedImage(null);
     setAttachedFileName('');
+  };
+
+  const loadHistory = async () => {
+    if (historyLoaded) return;
+    try {
+      const colRef = collection(db, 'users', userUid, 'boss_battle');
+      const q = query(colRef, orderBy('createdAt', 'desc'));
+      const snap = await getDocs(q);
+      const records: BattleRecord[] = snap.docs
+        .filter(d => d.id !== todayKey) // exclude today
+        .map(d => ({
+          date: d.id,
+          topic: d.data().topic || 'Unknown',
+          passed: d.data().passed || false,
+          attempts: d.data().attempts || 0,
+        }));
+      setHistory(records);
+      setHistoryLoaded(true);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleToggleHistory = () => {
+    if (!historyLoaded) loadHistory();
+    setShowHistory(p => !p);
   };
 
   return (
@@ -271,6 +308,52 @@ export default function BossBattlePanel({ userUid }: BossBattlePanelProps) {
               </>
             )}
           </button>
+
+          {/* Past Battles History */}
+          <div className="mt-5 w-full">
+            <button
+              onClick={handleToggleHistory}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-colors"
+              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', color: 'var(--muted)', cursor: 'pointer' }}
+            >
+              <span className="flex items-center gap-1.5"><Clock size={12} /> Past Battles</span>
+              {showHistory ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+            </button>
+
+            <AnimatePresence>
+              {showHistory && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden"
+                >
+                  <div className="mt-2 space-y-1.5 max-h-48 overflow-y-auto">
+                    {!historyLoaded ? (
+                      <div className="flex justify-center py-4"><Loader2 size={16} className="animate-spin text-[var(--muted)]" /></div>
+                    ) : history.length === 0 ? (
+                      <p className="text-center text-xs py-3" style={{ color: 'var(--muted)' }}>No past battles yet</p>
+                    ) : history.map(rec => (
+                      <div key={rec.date} className="flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div className="text-left min-w-0">
+                          <p className="text-[10px] font-semibold truncate" style={{ color: 'var(--foreground)' }}>{rec.topic}</p>
+                          <p className="text-[9px]" style={{ color: 'var(--muted)' }}>{rec.date} · {rec.attempts} attempt{rec.attempts !== 1 ? 's' : ''}</p>
+                        </div>
+                        <span className="ml-2 text-[9px] font-bold px-2 py-0.5 rounded-full flex-shrink-0" style={{
+                          background: rec.passed ? 'rgba(16,185,129,0.12)' : 'rgba(244,63,94,0.12)',
+                          color: rec.passed ? '#10b981' : '#f43f5e',
+                          border: `1px solid ${rec.passed ? 'rgba(16,185,129,0.25)' : 'rgba(244,63,94,0.25)'}`,
+                        }}>
+                          {rec.passed ? '✓ Win' : '✗ Loss'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </motion.div>
       ) : passed ? (
         /* VICTORY SCREEN */

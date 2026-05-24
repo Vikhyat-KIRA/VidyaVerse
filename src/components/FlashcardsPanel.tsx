@@ -2,16 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Layers, Sparkles, Plus, Trash2, ArrowRight, CheckCircle2, XCircle } from 'lucide-react';
+import { Layers, Sparkles, Plus, Trash2, ArrowRight, CheckCircle2, XCircle, BookOpen, Zap } from 'lucide-react';
 import { getFlashcards, addFlashcard, updateFlashcardBox, deleteFlashcard, type Flashcard } from '@/lib/flashcards';
 import { generateFlashcardsFromContext } from '@/lib/gemini';
 import { awardXp } from '@/lib/exp';
+import { useToast } from '@/components/Toast';
 
 interface FlashcardsPanelProps {
   userUid: string;
 }
 
 export default function FlashcardsPanel({ userUid }: FlashcardsPanelProps) {
+  const toast = useToast();
   const [cards, setCards] = useState<Flashcard[]>([]);
   const [loading, setLoading] = useState(true);
   const [forging, setForging] = useState(false);
@@ -56,12 +58,11 @@ export default function FlashcardsPanel({ userUid }: FlashcardsPanelProps) {
 
       // Award 20 XP for forging!
       await awardXp(userUid, 20);
-
-      alert("✨ VAYU has forged 6 new flashcards based on your memory vault! +20 XP Awarded!");
+      toast.success(`✨ VAYU forged ${generated.length} new flashcards from your memory vault! +20 XP`);
       await loadCards();
     } catch (e) {
       console.error(e);
-      alert("Failed to forge cards: " + (e as Error).message);
+      toast.error('Failed to forge cards: ' + (e as Error).message);
     } finally {
       setForging(false);
     }
@@ -84,7 +85,7 @@ export default function FlashcardsPanel({ userUid }: FlashcardsPanelProps) {
 
   const handleDelete = async (id?: string) => {
     if (!id) return;
-    if (confirm("Delete this card forever?")) {
+    if (window.confirm('Delete this card forever?')) {
       await deleteFlashcard(userUid, id);
       await loadCards();
     }
@@ -109,7 +110,9 @@ export default function FlashcardsPanel({ userUid }: FlashcardsPanelProps) {
         setCurrentCardIndex(prev => prev + 1);
       } else {
         // finished session!
-        alert(`🎓 Session Complete! Correct: ${sessionsStats.correct + (gotRight ? 1 : 0)} | Incorrect: ${sessionsStats.wrong + (!gotRight ? 1 : 0)}`);
+        const correct = sessionsStats.correct + (gotRight ? 1 : 0);
+        const wrong = sessionsStats.wrong + (!gotRight ? 1 : 0);
+        toast.success(`🎓 Session Complete! ✅ ${correct} correct, ❌ ${wrong} wrong`);
         setStudying(false);
         setCurrentCardIndex(0);
         setSessionsStats({ correct: 0, wrong: 0 });
@@ -245,13 +248,59 @@ export default function FlashcardsPanel({ userUid }: FlashcardsPanelProps) {
           </button>
         </div>
       ) : cards.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center text-center max-w-sm mx-auto">
-          <Layers size={48} className="text-[var(--muted)] mb-3 opacity-30 animate-pulse" />
-          <h3 className="font-bold text-[var(--foreground)]">Your vault is empty</h3>
-          <p className="text-xs text-[var(--muted)] mt-1.5 leading-relaxed">
-            Upload document snapshots in Flash-Forge or chat with VAYU, then click <strong>Forge with VAYU</strong> to construct custom spaced repetition cards automatically!
+        /* EMPTY STATE */
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="flex-1 flex flex-col items-center justify-center text-center px-6"
+        >
+          {/* Illustrated icon cluster */}
+          <div className="relative mb-6">
+            <div className="w-20 h-20 rounded-3xl flex items-center justify-center mx-auto" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.12), rgba(6,182,212,0.08))', border: '1px solid rgba(99,102,241,0.15)' }}>
+              <Layers size={36} style={{ color: 'var(--primary)', opacity: 0.8 }} />
+            </div>
+            <motion.div
+              animate={{ y: [-3, 3, -3] }}
+              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+              className="absolute -top-2 -right-2 w-8 h-8 rounded-xl flex items-center justify-center"
+              style={{ background: 'rgba(251,146,60,0.12)', border: '1px solid rgba(251,146,60,0.2)' }}
+            >
+              <Zap size={14} style={{ color: '#fb923c' }} />
+            </motion.div>
+            <motion.div
+              animate={{ y: [3, -3, 3] }}
+              transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
+              className="absolute -bottom-2 -left-2 w-8 h-8 rounded-xl flex items-center justify-center"
+              style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.2)' }}
+            >
+              <BookOpen size={14} style={{ color: '#10b981' }} />
+            </motion.div>
+          </div>
+
+          <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--foreground)' }}>Your vault is empty</h3>
+          <p className="text-xs leading-relaxed max-w-xs mb-6" style={{ color: 'var(--muted)' }}>
+            Chat with VAYU or upload diagrams in Flash-Forge, then forge personalized spaced repetition cards automatically — or add your own.
           </p>
-        </div>
+
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button
+              onClick={handleForgeWithVayu}
+              disabled={forging}
+              className="btn-primary flex items-center gap-2 text-sm"
+            >
+              <Sparkles size={14} />
+              {forging ? 'Forging...' : 'Forge with VAYU'}
+            </button>
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="btn-ghost flex items-center gap-2 text-sm"
+            >
+              <Plus size={14} />
+              Add Manually
+            </button>
+          </div>
+        </motion.div>
       ) : (
         /* CARD MANAGEMENT / START DECK OVERVIEW */
         <div className="flex-1 flex flex-col gap-6 overflow-hidden">
