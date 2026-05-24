@@ -24,11 +24,7 @@ export default function DashboardPage() {
   const [user, setUser] = useState<AppUser | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [activePanel, setActivePanel] = useState<ActivePanel>('chat');
-  // Read saved theme on first render — avoids flash
-  const [isDark, setIsDark] = useState(() => {
-    if (typeof window === 'undefined') return true;
-    return localStorage.getItem('vidyaverse-is-dark') !== 'false';
-  });
+  const [isDark, setIsDark] = useState(true); // SSR-safe default; corrected by useEffect
   const [userName, setUserName] = useState('Student');
   const [userAim, setUserAim] = useState('Become the best version of yourself');
   const [userXp, setUserXp] = useState(0);
@@ -97,7 +93,14 @@ export default function DashboardPage() {
     return () => window.removeEventListener('keydown', handleKey);
   }, [appView]);
 
-  // Theme management — persist to localStorage
+  // Theme management — read from localStorage on mount, persist on change
+  useEffect(() => {
+    // On first mount: read saved preference (pre-hydration script already
+    // applied the class, so no flash; this just syncs React state)
+    const saved = localStorage.getItem('vidyaverse-is-dark');
+    if (saved === 'false') setIsDark(false);
+  }, []);
+
   useEffect(() => {
     if (isDark) {
       document.documentElement.classList.remove('light');
