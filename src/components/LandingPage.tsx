@@ -255,24 +255,23 @@ export default function LandingPage({ onEnterApp }: LandingPageProps) {
           </p>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <motion.button
-              whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.96 }}
               onClick={onEnterApp}
-              className="btn-primary text-sm py-3 px-8 flex items-center gap-2"
+              className="btn-radiant-glow text-sm py-3 px-8 flex items-center gap-2"
             >
-              <Sparkles size={16} />
+              <Sparkles size={15} />
               Start Your Journey
-              <ChevronRight size={16} />
+              <ChevronRight size={15} />
             </motion.button>
             <motion.button
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.96 }}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
               onClick={() => setCustomizerOpen(true)}
-              className="btn-ghost text-sm py-3 px-6 flex items-center gap-2"
+              className="btn-ghost text-sm py-3 px-6 flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900/35 text-zinc-300 font-semibold"
             >
-              <Palette size={16} />
+              <Palette size={15} />
               Customize Look
             </motion.button>
           </div>
@@ -348,51 +347,122 @@ export default function LandingPage({ onEnterApp }: LandingPageProps) {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               whileHover={{ y: -4 }}
-              className="glass-card p-6 md:col-span-2 flex flex-col justify-between overflow-hidden relative group cursor-default min-h-[220px]"
+              className="glass-card huly-card-glow p-6 md:col-span-2 flex flex-col justify-between overflow-hidden relative group cursor-default min-h-[240px]"
             >
-              <div className="absolute -right-6 -bottom-6 opacity-20 group-hover:opacity-30 transition-opacity duration-300 pointer-events-none">
-                <VayuOrb size="md" />
-              </div>
-              <div className="relative z-10">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-105" style={{ background: '#6c63ff15', border: '1px solid #6c63ff30' }}>
-                  <MessageCircle size={18} style={{ color: '#6c63ff' }} />
+              {/* Default Mockup View */}
+              <div className="flex flex-col justify-between h-full w-full transition-all duration-500 ease-in-out group-hover:opacity-0 group-hover:scale-[0.97] group-hover:pointer-events-none">
+                <div className="absolute -right-6 -bottom-6 opacity-20 group-hover:opacity-30 transition-opacity duration-300 pointer-events-none">
+                  <VayuOrb size="md" />
                 </div>
-                <h3 className="text-base font-bold mb-2 text-white">VAYU — AI Study Mentor</h3>
-                <p className="text-xs text-[var(--muted)] leading-relaxed max-w-md">
-                  Context-aware intelligence that understands your unique academic background. VAYU reads connected study records in real-time, tailoring custom revision routes and quizzes specifically for you.
-                </p>
+                <div className="relative z-10">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-105" style={{ background: '#6c63ff15', border: '1px solid #6c63ff30' }}>
+                    <MessageCircle size={18} style={{ color: '#6c63ff' }} />
+                  </div>
+                  <h3 className="text-base font-bold mb-2 text-white">VAYU — AI Study Mentor</h3>
+                  <p className="text-xs text-[var(--muted)] leading-relaxed max-w-md">
+                    Context-aware intelligence that understands your unique academic background. VAYU reads connected study records in real-time, tailoring custom revision routes and quizzes specifically for you.
+                  </p>
+                </div>
+                <div className="mt-6 p-3 rounded-lg border border-zinc-800/40 bg-zinc-900/30 font-mono text-[9px] text-zinc-400 space-y-1 relative z-10 max-w-md">
+                  <div className="flex items-center gap-1.5 text-zinc-500"><span>&gt;</span><span>vayu --analyze current-learning-curve</span></div>
+                  <div className="text-violet-400 flex items-center gap-0.5">
+                    <span>Analysis: Leitner Box 2 needs review. Generating custom flashcards...</span>
+                    <span className="w-1 h-3 bg-violet-400 animate-blink" />
+                  </div>
+                </div>
               </div>
-              <div className="mt-6 p-3 rounded-lg border border-zinc-800/40 bg-zinc-900/30 font-mono text-[9px] text-zinc-400 space-y-1 relative z-10 max-w-md transition-all duration-300 group-hover:border-violet-500/20 group-hover:bg-violet-950/5">
-                <div className="flex items-center gap-1.5 text-zinc-500"><span>&gt;</span><span>vayu --analyze current-learning-curve</span></div>
-                <div className="text-violet-400 flex items-center gap-0.5">
-                  <span>Analysis: Leitner Box 2 needs review. Generating custom flashcards...</span>
-                  <span className="w-1 h-3 bg-violet-400 animate-blink" />
+
+              {/* Hover Sneak Peek (actual app chat window) */}
+              <div className="absolute inset-0 p-6 opacity-0 scale-105 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto transition-all duration-500 ease-in-out flex flex-col justify-between bg-zinc-950/90 backdrop-blur-xl z-20">
+                <div className="flex items-center justify-between border-b border-zinc-800/60 pb-2">
+                  <div className="flex items-center gap-2">
+                    <VayuOrb size="sm" />
+                    <div>
+                      <p className="text-xs font-bold text-white leading-none">🤖 VAYU Mentor</p>
+                      <span className="text-[8px] text-emerald-400 flex items-center gap-1 mt-0.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Active Session
+                      </span>
+                    </div>
+                  </div>
+                  <span className="text-[8px] font-mono text-zinc-500 uppercase tracking-widest bg-zinc-900 px-2 py-0.5 rounded">Mock Panel</span>
+                </div>
+                <div className="flex-1 py-3 flex flex-col gap-2 overflow-y-auto no-scrollbar justify-end text-[9px] font-medium leading-relaxed">
+                  <div className="bg-zinc-900/60 border border-zinc-800/30 p-2 rounded-lg max-w-[85%] self-start text-zinc-300">
+                    Conquering chemistry today? I've loaded your Google Sheets exam goals.
+                  </div>
+                  <div className="bg-violet-950/20 border border-violet-500/20 p-2 rounded-lg max-w-[85%] self-end text-violet-300">
+                    Yes! Forge a spaced repetition quiz for Chapter 4.
+                  </div>
+                  <div className="bg-zinc-900/60 border border-zinc-800/30 p-2 rounded-lg max-w-[85%] self-start text-zinc-300 text-violet-400 font-bold flex items-center gap-1">
+                    Active quiz forged! Defeat the Boss to earn 200 XP. ⚡
+                  </div>
+                </div>
+                <div className="border-t border-zinc-800/50 pt-2 flex items-center justify-between text-[9px] text-zinc-500">
+                  <span>Message Vayu...</span>
+                  <span className="text-[8px] font-mono opacity-50">⚡ Forge</span>
                 </div>
               </div>
             </motion.div>
 
-            {/* Card 2: Private 1-on-1 DMs */}
+            {/* Card 2: Private DMs */}
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               whileHover={{ y: -4 }}
-              className="glass-card p-6 flex flex-col justify-between overflow-hidden relative group cursor-default min-h-[220px]"
+              className="glass-card huly-card-glow p-6 flex flex-col justify-between overflow-hidden relative group cursor-default min-h-[240px]"
             >
-              <div>
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-105" style={{ background: '#00f0ff15', border: '1px solid #00f0ff30' }}>
-                  <Users size={18} style={{ color: '#00f0ff' }} />
+              {/* Default Mockup View */}
+              <div className="flex flex-col justify-between h-full w-full transition-all duration-500 ease-in-out group-hover:opacity-0 group-hover:scale-[0.97] group-hover:pointer-events-none">
+                <div>
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-105" style={{ background: '#00f0ff15', border: '1px solid #00f0ff30' }}>
+                    <Users size={18} style={{ color: '#00f0ff' }} />
+                  </div>
+                  <h3 className="text-base font-bold mb-2 text-white">Private DMs</h3>
+                  <p className="text-xs text-[var(--muted)] leading-relaxed">
+                    End-to-end invite room codes that automatically self-destruct from discovery index once your peer joins. Auto-locking.
+                  </p>
                 </div>
-                <h3 className="text-base font-bold mb-2 text-white">Private DMs</h3>
-                <p className="text-xs text-[var(--muted)] leading-relaxed">
-                  End-to-end invite room codes that automatically self-destruct from discovery index once your peer joins. Auto-locking.
-                </p>
+                <div className="mt-6 flex flex-col gap-2">
+                  <div className="flex items-center gap-2 p-2 rounded border border-zinc-800/40 bg-zinc-900/20">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-[10px] font-mono text-zinc-400 flex-1">Room: #7X829B (Locked)</span>
+                    <span className="text-xs transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12">🔒</span>
+                  </div>
+                </div>
               </div>
-              <div className="mt-6 flex flex-col gap-2">
-                <div className="flex items-center gap-2 p-2 rounded border border-zinc-800/40 bg-zinc-900/20 transition-all duration-300 group-hover:border-cyan-500/25 group-hover:bg-cyan-950/10">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-[10px] font-mono text-zinc-400 flex-1">Room: #7X829B (Locked)</span>
-                  <span className="text-xs transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12">🔒</span>
+
+              {/* Hover Sneak Peek (actual app split guilds/DM thread) */}
+              <div className="absolute inset-0 p-6 opacity-0 scale-105 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto transition-all duration-500 ease-in-out flex flex-col justify-between bg-zinc-950/90 backdrop-blur-xl z-20">
+                <div className="flex items-center justify-between border-b border-zinc-800/60 pb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-5 h-5 rounded-full bg-cyan-500 flex items-center justify-center text-[8px] font-bold text-white">7X</div>
+                    <div>
+                      <p className="text-xs font-bold text-white leading-none">Emily &amp; Jane</p>
+                      <span className="text-[7px] text-zinc-400 mt-0.5">Invite Code Active</span>
+                    </div>
+                  </div>
+                  <span className="text-[7px] font-mono text-cyan-400 bg-cyan-950/30 border border-cyan-500/20 px-2 py-0.5 rounded">Auto-Locked 🔒</span>
+                </div>
+                <div className="flex-1 py-3 flex flex-col gap-1.5 overflow-y-auto no-scrollbar justify-end text-[9px] font-medium leading-relaxed">
+                  <div className="flex gap-1.5 items-start">
+                    <div className="w-4 h-4 rounded-full bg-cyan-700 flex items-center justify-center text-[7px] font-bold text-white">E</div>
+                    <div className="bg-zinc-900/80 p-2 rounded-lg flex-1 text-zinc-300">
+                      <p className="text-[7px] font-black text-cyan-400 mb-0.5">Emily</p>
+                      Hey! Let's study chemistry math together.
+                    </div>
+                  </div>
+                  <div className="flex gap-1.5 items-start">
+                    <div className="w-4 h-4 rounded-full bg-violet-700 flex items-center justify-center text-[7px] font-bold text-white">J</div>
+                    <div className="bg-zinc-900/80 p-2 rounded-lg flex-1 text-zinc-300">
+                      <p className="text-[7px] font-black text-violet-400 mb-0.5">Jane</p>
+                      Sending they key notes via Forge Vision.
+                    </div>
+                  </div>
+                </div>
+                <div className="border-t border-zinc-800/50 pt-2 flex items-center justify-between text-[9px] text-zinc-500">
+                  <span>Type message...</span>
+                  <span className="w-2.5 h-2.5 bg-zinc-800 rounded flex items-center justify-center">➔</span>
                 </div>
               </div>
             </motion.div>
@@ -403,21 +473,55 @@ export default function LandingPage({ onEnterApp }: LandingPageProps) {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               whileHover={{ y: -4 }}
-              className="glass-card p-6 flex flex-col justify-between overflow-hidden relative group cursor-default min-h-[220px]"
+              className="glass-card huly-card-glow p-6 flex flex-col justify-between overflow-hidden relative group cursor-default min-h-[240px]"
             >
-              <div>
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-105" style={{ background: '#34d39915', border: '1px solid #34d39930' }}>
-                  <Zap size={18} style={{ color: '#34d399' }} />
+              {/* Default Mockup View */}
+              <div className="flex flex-col justify-between h-full w-full transition-all duration-500 ease-in-out group-hover:opacity-0 group-hover:scale-[0.97] group-hover:pointer-events-none">
+                <div>
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-105" style={{ background: '#34d39915', border: '1px solid #34d39930' }}>
+                    <Zap size={18} style={{ color: '#34d399' }} />
+                  </div>
+                  <h3 className="text-base font-bold mb-2 text-white">Spaced Repetition</h3>
+                  <p className="text-xs text-[var(--muted)] leading-relaxed">
+                    Conquer the forgetting curve using our optimized Leitner-system spaced repetition engine.
+                  </p>
                 </div>
-                <h3 className="text-base font-bold mb-2 text-white">Spaced Repetition</h3>
-                <p className="text-xs text-[var(--muted)] leading-relaxed">
-                  Conquer the forgetting curve using our optimized Leitner-system spaced repetition engine.
-                </p>
+                <div className="mt-6 flex items-end gap-1.5 font-mono text-[9px] pl-1">
+                  <div className="w-8 h-8 rounded border border-zinc-800/50 bg-zinc-900/30 flex flex-col items-center justify-center text-zinc-500 transition-all duration-300 group-hover:translate-y-[-2px]">Box 1</div>
+                  <div className="w-8 h-10 rounded border border-zinc-700/50 bg-zinc-900/60 flex flex-col items-center justify-center text-zinc-400 transition-all duration-300 group-hover:translate-y-[-4px] group-hover:border-zinc-500">Box 2</div>
+                  <div className="w-8 h-12 rounded border border-emerald-500/20 bg-emerald-500/5 flex flex-col items-center justify-center text-emerald-400 transition-all duration-300 group-hover:translate-y-[-6px] group-hover:border-emerald-500/40 group-hover:shadow-[0_0_12px_rgba(16,185,129,0.15)]">Box 3</div>
+                </div>
               </div>
-              <div className="mt-6 flex items-end gap-1.5 font-mono text-[9px] pl-1">
-                <div className="w-8 h-8 rounded border border-zinc-800/50 bg-zinc-900/30 flex flex-col items-center justify-center text-zinc-500 transition-all duration-300 group-hover:translate-y-[-2px]">Box 1</div>
-                <div className="w-8 h-10 rounded border border-zinc-700/50 bg-zinc-900/60 flex flex-col items-center justify-center text-zinc-400 transition-all duration-300 group-hover:translate-y-[-4px] group-hover:border-zinc-500">Box 2</div>
-                <div className="w-8 h-12 rounded border border-emerald-500/20 bg-emerald-500/5 flex flex-col items-center justify-center text-emerald-400 transition-all duration-300 group-hover:translate-y-[-6px] group-hover:border-emerald-500/40 group-hover:shadow-[0_0_12px_rgba(16,185,129,0.15)]">Box 3</div>
+
+              {/* Hover Sneak Peek (actual 3D Flipping flashcard) */}
+              <div className="absolute inset-0 p-6 opacity-0 scale-105 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto transition-all duration-500 ease-in-out flex flex-col justify-between bg-zinc-950/90 backdrop-blur-xl z-20">
+                <div className="flex items-center justify-between border-b border-zinc-800/60 pb-2">
+                  <p className="text-xs font-bold text-white">Interactive Card Flip</p>
+                  <span className="text-[7px] text-zinc-500 uppercase tracking-widest bg-zinc-900 px-2 py-0.5 rounded">Box 2</span>
+                </div>
+                <div className="flex-1 py-4 flex items-center justify-center perspective-1000">
+                  {/* 3D Card Object */}
+                  <div className="w-full h-[110px] relative preserve-3d transition-transform duration-700 group-hover:rotate-y-180">
+                    {/* Front Side */}
+                    <div className="absolute inset-0 rounded-lg border border-zinc-800 bg-zinc-900 flex flex-col items-center justify-center text-center p-3 backface-hidden">
+                      <p className="text-[8px] uppercase tracking-wider text-emerald-400 font-bold mb-1">Concept</p>
+                      <p className="text-[10px] font-bold text-zinc-200">Mitochondria</p>
+                      <p className="text-[7px] text-zinc-500 mt-2">Hover card to reveal answer</p>
+                    </div>
+                    {/* Back Side */}
+                    <div className="absolute inset-0 rounded-lg border border-emerald-500/20 bg-emerald-950/15 flex flex-col items-center justify-center text-center p-3 backface-hidden rotate-y-180">
+                      <p className="text-[8px] uppercase tracking-wider text-emerald-400 font-bold mb-1">Definition</p>
+                      <p className="text-[9px] text-zinc-300 font-medium leading-normal px-1">
+                        Powerhouse of the cell, synthesizes ATP molecules.
+                      </p>
+                      <span className="text-[7px] text-emerald-400 font-mono mt-1.5">Box 2 ➔ Box 3 ⚡</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex justify-center gap-2 text-[8px] font-bold">
+                  <span className="text-red-400 bg-red-950/10 px-2 py-1 rounded border border-red-500/20">Forgot</span>
+                  <span className="text-emerald-400 bg-emerald-950/10 px-2 py-1 rounded border border-emerald-500/20">Remembered</span>
+                </div>
               </div>
             </motion.div>
 
@@ -427,23 +531,56 @@ export default function LandingPage({ onEnterApp }: LandingPageProps) {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               whileHover={{ y: -4 }}
-              className="glass-card p-6 flex flex-col justify-between overflow-hidden relative group cursor-default min-h-[220px]"
+              className="glass-card huly-card-glow p-6 flex flex-col justify-between overflow-hidden relative group cursor-default min-h-[240px]"
             >
-              <div>
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-105" style={{ background: '#f59e0b15', border: '1px solid #f59e0b30' }}>
-                  <Timer size={18} style={{ color: '#f59e0b' }} />
+              {/* Default Mockup View */}
+              <div className="flex flex-col justify-between h-full w-full transition-all duration-500 ease-in-out group-hover:opacity-0 group-hover:scale-[0.97] group-hover:pointer-events-none">
+                <div>
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-105" style={{ background: '#f59e0b15', border: '1px solid #f59e0b30' }}>
+                    <Timer size={18} style={{ color: '#f59e0b' }} />
+                  </div>
+                  <h3 className="text-base font-bold mb-2 text-white">Pomodoro Coach</h3>
+                  <p className="text-xs text-[var(--muted)] leading-relaxed">
+                    Glassmorphic timer with smart interactive voice interruptions to bring you back to deep focus intervals.
+                  </p>
                 </div>
-                <h3 className="text-base font-bold mb-2 text-white">Pomodoro Coach</h3>
-                <p className="text-xs text-[var(--muted)] leading-relaxed">
-                  Glassmorphic timer with smart interactive voice interruptions to bring you back to deep focus intervals.
-                </p>
+                <div className="mt-6 flex items-center justify-between font-mono text-[10px] text-zinc-400 px-1 relative">
+                  <span className="text-amber-500 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ring" />
+                    ● Focus Mode
+                  </span>
+                  <span className="font-bold text-white text-xs group-hover:text-amber-400 transition-colors duration-300">25:00</span>
+                </div>
               </div>
-              <div className="mt-6 flex items-center justify-between font-mono text-[10px] text-zinc-400 px-1 relative">
-                <span className="text-amber-500 flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ring" />
-                  ● Focus Mode
-                </span>
-                <span className="font-bold text-white text-xs group-hover:text-amber-400 transition-colors duration-300">25:00</span>
+
+              {/* Hover Sneak Peek (actual concentric active timer circle) */}
+              <div className="absolute inset-0 p-6 opacity-0 scale-105 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto transition-all duration-500 ease-in-out flex flex-col justify-between bg-zinc-950/90 backdrop-blur-xl z-20">
+                <div className="flex items-center justify-between border-b border-zinc-800/60 pb-2">
+                  <p className="text-xs font-bold text-white">Active Focus Circle</p>
+                  <span className="text-[7px] text-amber-400 uppercase tracking-widest bg-amber-950/10 px-2 py-0.5 rounded border border-amber-500/20">Coach Active</span>
+                </div>
+                <div className="flex-1 flex flex-col items-center justify-center relative py-2">
+                  {/* Concentric Progress Ring */}
+                  <svg className="w-[85px] h-[85px]" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(245, 158, 11, 0.1)" strokeWidth="4" />
+                    <circle cx="50" cy="50" r="44" fill="none" stroke="url(#amber-gradient)" strokeWidth="4" strokeDasharray="276" strokeDashoffset="24" className="transition-all duration-1000" />
+                    <defs>
+                      <linearGradient id="amber-gradient" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stopColor="#f59e0b" />
+                        <stop offset="100%" stopColor="#ef4444" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                  {/* Center Time */}
+                  <div className="absolute flex flex-col items-center justify-center">
+                    <p className="text-[12px] font-mono font-bold text-white">24:59</p>
+                    <span className="text-[6px] uppercase tracking-wider text-amber-500">Studying</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between text-[8px] text-zinc-500 font-mono">
+                  <span>🔊 Voice Feedback: Enabled</span>
+                  <span>Interval 1/4</span>
+                </div>
               </div>
             </motion.div>
 
@@ -453,25 +590,63 @@ export default function LandingPage({ onEnterApp }: LandingPageProps) {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               whileHover={{ y: -4 }}
-              className="glass-card p-6 flex flex-col justify-between overflow-hidden relative group cursor-default min-h-[220px]"
+              className="glass-card huly-card-glow p-6 flex flex-col justify-between overflow-hidden relative group cursor-default min-h-[240px]"
             >
-              <div>
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-105" style={{ background: '#f43f5e15', border: '1px solid #f43f5e30' }}>
-                  <Trophy size={18} style={{ color: '#f43f5e' }} />
+              {/* Default Mockup View */}
+              <div className="flex flex-col justify-between h-full w-full transition-all duration-500 ease-in-out group-hover:opacity-0 group-hover:scale-[0.97] group-hover:pointer-events-none">
+                <div>
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-105" style={{ background: '#f43f5e15', border: '1px solid #f43f5e30' }}>
+                    <Trophy size={18} style={{ color: '#f43f5e' }} />
+                  </div>
+                  <h3 className="text-base font-bold mb-2 text-white">Leaderboards & XP</h3>
+                  <p className="text-xs text-[var(--muted)] leading-relaxed">
+                    Earn XP, maintain daily study streaks, and climb ranks globally. Climb from Rookie to Scholar.
+                  </p>
                 </div>
-                <h3 className="text-base font-bold mb-2 text-white">Leaderboards & XP</h3>
-                <p className="text-xs text-[var(--muted)] leading-relaxed">
-                  Earn XP, maintain daily study streaks, and climb ranks globally. Climb from Rookie to Scholar.
-                </p>
+                <div className="mt-6 space-y-1 font-mono text-[9px] text-zinc-400 w-full">
+                  <div className="flex justify-between items-center bg-zinc-900/30 p-1 px-2 rounded border border-zinc-800/20 transition-all duration-300 group-hover:bg-rose-950/5 group-hover:border-rose-500/20 group-hover:translate-x-1">
+                    <span className="flex items-center gap-1">🥇 Vikhyat</span>
+                    <span className="text-rose-400 font-bold transition-all duration-300 group-hover:scale-105">9,500 XP</span>
+                  </div>
+                  <div className="flex justify-between items-center bg-zinc-900/10 p-1 px-2 rounded transition-all duration-300 group-hover:translate-x-0.5">
+                    <span>🥈 Emily</span>
+                    <span className="text-zinc-500">8,200 XP</span>
+                  </div>
+                </div>
               </div>
-              <div className="mt-6 space-y-1 font-mono text-[9px] text-zinc-400 w-full">
-                <div className="flex justify-between items-center bg-zinc-900/30 p-1 px-2 rounded border border-zinc-800/20 transition-all duration-300 group-hover:bg-rose-950/5 group-hover:border-rose-500/20 group-hover:translate-x-1">
-                  <span className="flex items-center gap-1">🥇 Vikhyat</span>
-                  <span className="text-rose-400 font-bold transition-all duration-300 group-hover:scale-105">9,500 XP</span>
+
+              {/* Hover Sneak Peek (actual live scoreboard table) */}
+              <div className="absolute inset-0 p-6 opacity-0 scale-105 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto transition-all duration-500 ease-in-out flex flex-col justify-between bg-zinc-950/90 backdrop-blur-xl z-20">
+                <div className="flex items-center justify-between border-b border-zinc-800/60 pb-2">
+                  <p className="text-xs font-bold text-white">Omniscient Scholar Board</p>
+                  <span className="text-[7px] text-rose-400 bg-rose-950/10 border border-rose-500/20 px-2 py-0.5 rounded">Ranchi Guild</span>
                 </div>
-                <div className="flex justify-between items-center bg-zinc-900/10 p-1 px-2 rounded transition-all duration-300 group-hover:translate-x-0.5">
-                  <span>🥈 Emily</span>
-                  <span className="text-zinc-500">8,200 XP</span>
+                <div className="flex-1 py-3 flex flex-col gap-1.5 justify-center text-[9px] font-mono">
+                  <div className="flex items-center justify-between bg-rose-500/10 border border-rose-500/20 p-1.5 rounded-lg text-zinc-200">
+                    <span className="flex items-center gap-1.5"><span className="text-rose-400">1st</span> Vikhyat</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[7px] text-orange-400">🔥 15 Days</span>
+                      <span className="font-bold text-rose-400">9,800 XP</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between bg-zinc-900/60 border border-zinc-800/40 p-1.5 rounded-lg text-zinc-300">
+                    <span className="flex items-center gap-1.5"><span className="text-zinc-400">2nd</span> Emily</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[7px] text-orange-400">🔥 10 Days</span>
+                      <span className="font-bold text-zinc-400">8,500 XP</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between bg-zinc-900/30 border border-zinc-800/20 p-1.5 rounded-lg text-zinc-400">
+                    <span className="flex items-center gap-1.5"><span className="text-zinc-500">3rd</span> Jane</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[7px] text-zinc-500">🔥 5 Days</span>
+                      <span className="font-bold text-zinc-400">7,800 XP</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between text-[8px] text-zinc-500">
+                  <span>Academic Rank: Rookie ➔ Scholar</span>
+                  <span className="text-rose-400 font-bold">1st Place</span>
                 </div>
               </div>
             </motion.div>
@@ -482,28 +657,76 @@ export default function LandingPage({ onEnterApp }: LandingPageProps) {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               whileHover={{ y: -4 }}
-              className="glass-card p-6 md:col-span-2 flex flex-col justify-between overflow-hidden relative group cursor-default min-h-[220px]"
+              className="glass-card huly-card-glow p-6 md:col-span-2 flex flex-col justify-between overflow-hidden relative group cursor-default min-h-[240px]"
             >
-              <div className="relative z-10">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-105" style={{ background: '#a855f715', border: '1px solid #a855f730' }}>
-                  <Image size={18} style={{ color: '#a855f7' }} />
+              {/* Default Mockup View */}
+              <div className="flex flex-col justify-between h-full w-full transition-all duration-500 ease-in-out group-hover:opacity-0 group-hover:scale-[0.97] group-hover:pointer-events-none">
+                <div className="relative z-10">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-105" style={{ background: '#a855f715', border: '1px solid #a855f730' }}>
+                    <Image size={18} style={{ color: '#a855f7' }} />
+                  </div>
+                  <h3 className="text-base font-bold mb-2 text-white">Flash-Forge Vision</h3>
+                  <p className="text-xs text-[var(--muted)] leading-relaxed max-w-md">
+                    Upload PDF screenshots, study slides, or textbook photos. Our multimodal visual engine parses them instantly, delivering step-by-step mathematical explanations, core concepts, and auto-forging flashcards.
+                  </p>
                 </div>
-                <h3 className="text-base font-bold mb-2 text-white">Flash-Forge Vision</h3>
-                <p className="text-xs text-[var(--muted)] leading-relaxed max-w-md">
-                  Upload PDF screenshots, study slides, or textbook photos. Our multimodal visual engine parses them instantly, delivering step-by-step mathematical explanations, core concepts, and auto-forging flashcards.
-                </p>
+                <div className="mt-6 p-3 rounded-lg border border-zinc-800/40 bg-zinc-900/30 flex items-center justify-between text-[9px] font-mono text-zinc-400 relative z-10 overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-purple-500/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out pointer-events-none" />
+                  <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="absolute left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-purple-500 to-transparent shadow-[0_0_8px_rgba(168,85,247,0.5)] animate-laser" />
+                  </div>
+                  <div className="flex items-center gap-2 relative z-10">
+                    <span className="text-purple-400">📊 textbook_chapter4.png</span>
+                    <span className="text-zinc-600">|</span>
+                    <span>1.2 MB</span>
+                  </div>
+                  <span className="text-emerald-400 font-medium relative z-10 transition-all duration-300 group-hover:scale-105">OCR Parsed & Deck Forged ⚡</span>
+                </div>
               </div>
-              <div className="mt-6 p-3 rounded-lg border border-zinc-800/40 bg-zinc-900/30 flex items-center justify-between text-[9px] font-mono text-zinc-400 relative z-10 overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-purple-500/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out pointer-events-none" />
-                <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <div className="absolute left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-purple-500 to-transparent shadow-[0_0_8px_rgba(168,85,247,0.5)] animate-laser" />
+
+              {/* Hover Sneak Peek (actual OCR visual bounding boxes + scans) */}
+              <div className="absolute inset-0 p-6 opacity-0 scale-105 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto transition-all duration-500 ease-in-out flex flex-col justify-between bg-zinc-950/90 backdrop-blur-xl z-20">
+                <div className="flex items-center justify-between border-b border-zinc-800/60 pb-2">
+                  <p className="text-xs font-bold text-white">Multimodal Vision Parsing</p>
+                  <span className="text-[7px] text-purple-400 bg-purple-950/10 border border-purple-500/20 px-2 py-0.5 rounded">OCR Canvas</span>
                 </div>
-                <div className="flex items-center gap-2 relative z-10">
-                  <span className="text-purple-400">📊 textbook_chapter4.png</span>
-                  <span className="text-zinc-600">|</span>
-                  <span>1.2 MB</span>
+                <div className="flex-1 py-3 flex gap-3 relative overflow-hidden">
+                  {/* Active Laser Scanning Beam */}
+                  <div className="absolute left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-purple-500 to-transparent shadow-[0_0_10px_rgba(168,85,247,0.6)] animate-laser pointer-events-none" />
+
+                  {/* Simulated Textbook Canvas with bounding box highlights */}
+                  <div className="flex-1 border border-zinc-800 rounded-lg bg-zinc-900/60 p-3 font-mono text-[8px] text-zinc-400 flex flex-col justify-between relative overflow-hidden">
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_40%,#09090b_90%)] pointer-events-none" />
+                    <div className="space-y-2 relative z-10">
+                      <div className="border border-purple-500/30 bg-purple-500/5 p-1.5 rounded flex items-center justify-between">
+                        <span>[Formula Detected]</span>
+                        <span className="text-[7px] text-purple-400 font-bold">E = mc²</span>
+                      </div>
+                      <div className="border border-cyan-500/20 bg-cyan-500/5 p-1.5 rounded flex flex-col gap-1">
+                        <span>[Section: Energy Equivalence]</span>
+                        <p className="text-[7px] text-zinc-500 leading-normal">Energy equals mass times the speed of light squared.</p>
+                      </div>
+                    </div>
+                    <span className="text-[7px] text-zinc-500 uppercase tracking-wider relative z-10">Textbook Page 144 Scanning...</span>
+                  </div>
+
+                  {/* Simulated Auto-Forged Deck Preview on the right */}
+                  <div className="w-[120px] border border-emerald-500/20 rounded-lg bg-emerald-500/5 p-3 flex flex-col justify-between text-[8px] font-mono relative z-10">
+                    <div>
+                      <p className="text-[7px] text-emerald-400 font-bold mb-1">Forging Output</p>
+                      <ul className="space-y-1 text-zinc-300 text-[6.5px]">
+                        <li>✓ 5 Cards Generated</li>
+                        <li>✓ Math Equations Parsed</li>
+                        <li>✓ Added to Leitner Box 1</li>
+                      </ul>
+                    </div>
+                    <span className="text-emerald-400 font-bold text-right text-[7px]">Deck Active ⚡</span>
+                  </div>
                 </div>
-                <span className="text-emerald-400 font-medium relative z-10 transition-all duration-300 group-hover:scale-105">OCR Parsed & Deck Forged ⚡</span>
+                <div className="flex items-center justify-between text-[8px] text-zinc-500">
+                  <span>Input: PDF / textbook screenshots</span>
+                  <span className="text-emerald-400">100% OCR Accuracy</span>
+                </div>
               </div>
             </motion.div>
           </div>
@@ -576,14 +799,13 @@ export default function LandingPage({ onEnterApp }: LandingPageProps) {
             Join the study revolution. Your AI-powered academic universe awaits.
           </p>
           <motion.button
-            whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={onEnterApp}
-            className="btn-primary text-sm py-3.5 px-10 inline-flex items-center gap-2"
+            className="btn-radiant-glow text-sm py-3.5 px-10 inline-flex items-center gap-2"
           >
-            <Sparkles size={16} />
+            <Sparkles size={15} />
             Launch VidyaVerse
-            <ArrowRight size={16} />
+            <ArrowRight size={15} />
           </motion.button>
         </motion.div>
       </section>
