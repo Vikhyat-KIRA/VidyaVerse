@@ -266,12 +266,13 @@ export default function ChatPanel({ userUid, userName, onResponseComplete }: Cha
               </motion.button>
             );
 
-            return (
+             return (
               <motion.div
                 key={idx}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+                style={{ willChange: 'transform, opacity' }}
                 className={`flex gap-1.5 items-end ${isUser ? 'justify-end' : 'justify-start'}`}
                 onMouseEnter={() => setActiveMsgIdx(idx)}
                 onMouseLeave={() => setActiveMsgIdx(null)}

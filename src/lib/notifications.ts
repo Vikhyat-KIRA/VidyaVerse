@@ -124,8 +124,8 @@ export function sendBrowserNotification(title: string, body: string, tag: string
 
   const n = new Notification(title, {
     body,
-    icon: '/logo.png',
-    badge: '/icon.png',
+    icon: '/logo.webp',
+    badge: '/icon.webp',
     tag, // prevents duplicate notifications for the same room/thread
   });
 
@@ -166,8 +166,8 @@ export function scheduleStreakReminder(userName: string) {
     if (Notification.permission === 'granted') {
       const n = new Notification('VidyaVerse 🔥', {
         body: `Hey ${userName}! Don't break your streak today. VAYU is waiting.`,
-        icon: '/logo.png',
-        badge: '/icon.png',
+        icon: '/logo.webp',
+        badge: '/icon.webp',
         tag: 'streak-reminder',
       });
       n.onclick = () => {

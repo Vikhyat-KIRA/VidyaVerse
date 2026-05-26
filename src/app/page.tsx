@@ -2,18 +2,54 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import dynamic from 'next/dynamic';
+import { Loader2 } from 'lucide-react';
+
 import Sidebar, { type ActivePanel } from '@/components/Sidebar';
-import ChatPanel from '@/components/ChatPanel';
-import CommunityPanel from '@/components/CommunityPanel';
-import FlashForge from '@/components/FlashForge';
-import PomodoroCoach from '@/components/PomodoroCoach';
-import SettingsPanel from '@/components/SettingsPanel';
 import AuthScreen from '@/components/AuthScreen';
-import FlashcardsPanel from '@/components/FlashcardsPanel';
-import BossBattlePanel from '@/components/BossBattlePanel';
 import LandingPage from '@/components/LandingPage';
 import { ToastProvider } from '@/components/Toast';
-import ScoreCard from '@/components/ScoreCard';
+
+// Loading fallback spinner component
+const PanelLoading = () => (
+  <div className="h-full flex items-center justify-center">
+    <Loader2 className="animate-spin text-[var(--primary)]" size={32} />
+  </div>
+);
+
+// Dynamically imported panels for code-splitting
+const ChatPanel = dynamic(() => import('@/components/ChatPanel'), {
+  ssr: false,
+  loading: PanelLoading
+});
+const CommunityPanel = dynamic(() => import('@/components/CommunityPanel'), {
+  ssr: false,
+  loading: PanelLoading
+});
+const FlashForge = dynamic(() => import('@/components/FlashForge'), {
+  ssr: false,
+  loading: PanelLoading
+});
+const PomodoroCoach = dynamic(() => import('@/components/PomodoroCoach'), {
+  ssr: false,
+  loading: PanelLoading
+});
+const SettingsPanel = dynamic(() => import('@/components/SettingsPanel'), {
+  ssr: false,
+  loading: PanelLoading
+});
+const FlashcardsPanel = dynamic(() => import('@/components/FlashcardsPanel'), {
+  ssr: false,
+  loading: PanelLoading
+});
+const BossBattlePanel = dynamic(() => import('@/components/BossBattlePanel'), {
+  ssr: false,
+  loading: PanelLoading
+});
+const ScoreCard = dynamic(() => import('@/components/ScoreCard'), {
+  ssr: false
+});
+
 import { onAuthStateChanged, signOut, getUserProfile, type AppUser } from '@/lib/firebase';
 import { getUserFromSheet } from '@/actions/sheets';
 import { 
@@ -526,12 +562,12 @@ export default function DashboardPage() {
           <div className="h-full p-0 md:p-5">
             <AnimatePresence mode="wait">
               {activePanel === 'chat' && (
-                <motion.div key="chat" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }} className="h-full glass-card rounded-none md:rounded-[20px] border-x-0 md:border-x border-t-0 md:border-t p-3 md:p-5">
+                <motion.div key="chat" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }} style={{ willChange: 'transform, opacity' }} className="h-full glass-card rounded-none md:rounded-[20px] border-x-0 md:border-x border-t-0 md:border-t p-3 md:p-5">
                   <ChatPanel userUid={user!.uid} userName={userName} onResponseComplete={handleVayuResponseComplete} />
                 </motion.div>
               )}
               {activePanel === 'community' && (
-                <motion.div key="community" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }} className="h-full glass-card rounded-none md:rounded-[20px] border-x-0 md:border-x border-t-0 md:border-t p-3 md:p-5">
+                <motion.div key="community" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }} style={{ willChange: 'transform, opacity' }} className="h-full glass-card rounded-none md:rounded-[20px] border-x-0 md:border-x border-t-0 md:border-t p-3 md:p-5">
                   <CommunityPanel 
                     userUid={user!.uid} 
                     userName={userName} 
@@ -542,27 +578,27 @@ export default function DashboardPage() {
                 </motion.div>
               )}
               {activePanel === 'flashforge' && (
-                <motion.div key="flashforge" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }} className="h-full glass-card rounded-none md:rounded-[20px] border-x-0 md:border-x border-t-0 md:border-t p-3 md:p-5">
+                <motion.div key="flashforge" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }} style={{ willChange: 'transform, opacity' }} className="h-full glass-card rounded-none md:rounded-[20px] border-x-0 md:border-x border-t-0 md:border-t p-3 md:p-5">
                   <FlashForge userUid={user!.uid} />
                 </motion.div>
               )}
               {activePanel === 'pomodoro' && (
-                <motion.div key="pomodoro" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }} className="h-full glass-card rounded-none md:rounded-[20px] border-x-0 md:border-x border-t-0 md:border-t p-3 md:p-5">
+                <motion.div key="pomodoro" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }} style={{ willChange: 'transform, opacity' }} className="h-full glass-card rounded-none md:rounded-[20px] border-x-0 md:border-x border-t-0 md:border-t p-3 md:p-5">
                   <PomodoroCoach userUid={user!.uid} userName={userName} userAim={userAim} />
                 </motion.div>
               )}
               {activePanel === 'flashcards' && (
-                <motion.div key="flashcards" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }} className="h-full glass-card rounded-none md:rounded-[20px] border-x-0 md:border-x border-t-0 md:border-t p-3 md:p-5">
+                <motion.div key="flashcards" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }} style={{ willChange: 'transform, opacity' }} className="h-full glass-card rounded-none md:rounded-[20px] border-x-0 md:border-x border-t-0 md:border-t p-3 md:p-5">
                   <FlashcardsPanel userUid={user!.uid} />
                 </motion.div>
               )}
               {activePanel === 'bossbattle' && (
-                <motion.div key="bossbattle" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }} className="h-full glass-card rounded-none md:rounded-[20px] border-x-0 md:border-x border-t-0 md:border-t p-3 md:p-5">
+                <motion.div key="bossbattle" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }} style={{ willChange: 'transform, opacity' }} className="h-full glass-card rounded-none md:rounded-[20px] border-x-0 md:border-x border-t-0 md:border-t p-3 md:p-5">
                   <BossBattlePanel userUid={user!.uid} />
                 </motion.div>
               )}
               {activePanel === 'settings' && (
-                <motion.div key="settings" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }} className="h-full glass-card rounded-none md:rounded-[20px] border-x-0 md:border-x border-t-0 md:border-t p-3 md:p-5">
+                <motion.div key="settings" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }} style={{ willChange: 'transform, opacity' }} className="h-full glass-card rounded-none md:rounded-[20px] border-x-0 md:border-x border-t-0 md:border-t p-3 md:p-5">
                   <SettingsPanel userUid={user!.uid} />
                 </motion.div>
               )}

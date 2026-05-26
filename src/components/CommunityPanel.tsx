@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Users, Hash, Plus, Key, Send, Loader2, Sparkles, ShieldCheck, MessageSquare, Trophy, Activity, ChevronLeft, Mail, User, CornerUpLeft, X } from 'lucide-react';
 import { getUserProfile, UserProfile } from '@/lib/firebase';
@@ -64,17 +64,12 @@ export default function CommunityPanel({
     }
   }, [activeRoomId, rooms]);
 
-  const [messageInput, setMessageInput] = useState('');
+  const [messageLimit, setMessageLimit] = useState(20);
   const [replyingTo, setReplyingTo] = useState<{
     id: string;
     text: string;
     senderName: string;
   } | null>(null);
-  // Track which message is "active" for reply button — supports both hover (desktop) and tap (mobile)
-  const [activeMsgId, setActiveMsgId] = useState<string | null>(null);
-
-  const handleMsgActivate = (msgKey: string) => setActiveMsgId(prev => prev === msgKey ? null : msgKey);
-  const handleMsgDeactivate = () => setActiveMsgId(null);
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [joinCode, setJoinCode] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -144,39 +139,20 @@ export default function CommunityPanel({
       onMarkRoomRead(activeRoom.id);
     }
 
-    const unsubscribe = subscribeToMessages(activeRoom.id, (newMsgs) => {
+    const unsubscribe = subscribeToMessages(activeRoom.id, messageLimit, (newMsgs) => {
       setMessages(newMsgs);
       setTimeout(() => scrollToBottom(), 100);
     });
 
     return () => unsubscribe();
-  }, [activeRoom, onMarkRoomRead]);
+  }, [activeRoom, onMarkRoomRead, messageLimit]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!messageInput.trim() || !activeRoom) return;
-
-    const text = messageInput.trim();
-    const replySnapshot = replyingTo ? { ...replyingTo } : null;
-    setMessageInput('');
-    setReplyingTo(null);
-    await sendMessage(
-      activeRoom.id,
-      text,
-      userUid,
-      userName,
-      replySnapshot
-        ? {
-            replyToId: replySnapshot.id,
-            replyToText: replySnapshot.text,
-            replyToSenderName: replySnapshot.senderName,
-          }
-        : undefined
-    );
+  const handleLoadMore = () => {
+    setMessageLimit(prev => prev + 20);
   };
 
   const handleCreateRoom = async () => {
@@ -569,6 +545,16 @@ export default function CommunityPanel({
                     </div>
                   </div>
                 )}
+                {messages.length > 0 && messages.length >= messageLimit && (
+                  <div className="flex justify-center py-2">
+                    <button
+                      onClick={handleLoadMore}
+                      className="text-xs font-bold text-[var(--primary)] hover:underline opacity-80"
+                    >
+                      Load older messages
+                    </button>
+                  </div>
+                )}
                 {messages.length === 0 ? (
                   activeRoom.type === 'dm' && activeRoom.members.length === 1 ? null : (
                     <div className="h-full flex flex-col items-center justify-center text-[var(--muted)] opacity-50">
@@ -581,104 +567,15 @@ export default function CommunityPanel({
                     const isMe = msg.senderId === userUid;
                     const timeStr = formatMsgTime(msg.timestamp);
                     const msgKey = msg.id || String(idx);
-                    const isActive = activeMsgId === msgKey;
-                    const replyBtn = (
-                      <motion.button
-                        initial={false}
-                        animate={{ opacity: isActive ? 1 : 0, scale: isActive ? 1 : 0.75 }}
-                        transition={{ duration: 0.12 }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setReplyingTo({ id: msgKey, text: msg.text, senderName: msg.senderName });
-                          setActiveMsgId(null);
-                        }}
-                        className="self-center flex-shrink-0 p-2 rounded-full"
-                        style={{
-                          background: 'rgba(99,102,241,0.14)',
-                          border: '1px solid rgba(99,102,241,0.25)',
-                          color: 'var(--primary)',
-                          cursor: 'pointer',
-                          pointerEvents: isActive ? 'auto' : 'none',
-                          // Always occupy space so layout doesn't shift; just invisible
-                        }}
-                        title="Reply"
-                        aria-label="Reply to message"
-                      >
-                        <CornerUpLeft size={13} />
-                      </motion.button>
-                    );
+                    
                     return (
-                      <div
-                        key={msgKey}
-                        className={`flex ${isMe ? 'justify-end' : 'justify-start'} items-end gap-1`}
-                        style={{ marginBottom: '2px' }}
-                        onMouseEnter={() => setActiveMsgId(msgKey)}
-                        onMouseLeave={handleMsgDeactivate}
-                        onClick={() => handleMsgActivate(msgKey)}
-                      >
-                        {/* Reply btn left (others' msgs) */}
-                        {!isMe && <span className="mb-1">{replyBtn}</span>}
-
-                        <div className={`max-w-[78%] sm:max-w-[80%] flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-                          {!isMe && <span className="text-[10px] text-[var(--muted)] ml-1 mb-0.5 font-medium">{msg.senderName}</span>}
-                          <div
-                            className="px-3.5 py-2.5 rounded-2xl text-sm break-words leading-relaxed"
-                            style={{
-                              background: isMe ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)' : 'var(--surface)',
-                              color: isMe ? 'white' : 'var(--foreground)',
-                              border: isMe ? 'none' : '1px solid var(--border-color)',
-                              boxShadow: isMe
-                                ? '0 2px 10px rgba(99,102,241,0.25)'
-                                : '0 1px 3px rgba(0,0,0,0.1)',
-                              borderBottomRightRadius: isMe ? '4px' : '18px',
-                              borderBottomLeftRadius: !isMe ? '4px' : '18px',
-                            }}
-                          >
-                            {/* Quoted reply preview */}
-                            {msg.replyToId && msg.replyToText && (
-                              <div
-                                className="mb-2 px-2 py-1.5 rounded-lg"
-                                style={{
-                                  background: isMe ? 'rgba(255,255,255,0.13)' : 'rgba(99,102,241,0.08)',
-                                  borderLeft: `3px solid ${isMe ? 'rgba(255,255,255,0.55)' : 'var(--primary)'}`,
-                                }}
-                              >
-                                <p
-                                  className="text-[10px] font-bold mb-0.5 truncate"
-                                  style={{ color: isMe ? 'rgba(255,255,255,0.8)' : 'var(--primary)' }}
-                                >
-                                  {msg.replyToSenderName}
-                                </p>
-                                <p
-                                  className="text-[11px] leading-snug"
-                                  style={{
-                                    color: isMe ? 'rgba(255,255,255,0.65)' : 'var(--muted)',
-                                    display: '-webkit-box',
-                                    WebkitLineClamp: 2,
-                                    WebkitBoxOrient: 'vertical',
-                                    overflow: 'hidden',
-                                  }}
-                                >
-                                  {msg.replyToText}
-                                </p>
-                              </div>
-                            )}
-                            {msg.text}
-                          </div>
-                          {/* Timestamp */}
-                          {timeStr && (
-                            <span
-                              className="text-[9px] mt-0.5 select-none px-1"
-                              style={{ color: 'var(--muted)', opacity: 0.6 }}
-                            >
-                              {timeStr}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Reply btn right (own msgs) */}
-                        {isMe && <span className="mb-1">{replyBtn}</span>}
-                      </div>
+                      <ChatMessageItem 
+                        key={msgKey} 
+                        msg={msg} 
+                        isMe={isMe} 
+                        timeStr={timeStr} 
+                        onReply={setReplyingTo} 
+                      />
                     );
                   })
                 )}
@@ -686,63 +583,13 @@ export default function CommunityPanel({
               </div>
 
               {/* Input Form */}
-              <form onSubmit={handleSendMessage} className="p-3 border-t" style={{ borderColor: 'var(--border-color)' }}>
-                {/* Reply bar */}
-                <AnimatePresence>
-                  {replyingTo && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="flex items-center gap-2 mb-2 px-3 py-2 rounded-xl"
-                      style={{
-                        background: 'rgba(99,102,241,0.08)',
-                        border: '1px solid rgba(99,102,241,0.2)',
-                        borderLeft: '3px solid var(--primary)',
-                      }}
-                    >
-                      <CornerUpLeft size={13} style={{ color: 'var(--primary)', flexShrink: 0 }} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[10px] font-bold" style={{ color: 'var(--primary)' }}>
-                          Replying to {replyingTo.senderName}
-                        </p>
-                        <p className="text-[11px] truncate" style={{ color: 'var(--muted)' }}>
-                          {replyingTo.text}
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setReplyingTo(null)}
-                        className="p-1 rounded-full flex-shrink-0"
-                        style={{ background: 'rgba(255,255,255,0.06)', border: 'none', cursor: 'pointer', color: 'var(--muted)' }}
-                        aria-label="Cancel reply"
-                      >
-                        <X size={13} />
-                      </button>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-                <div className="relative flex items-center">
-                  <input
-                    type="text"
-                    value={messageInput}
-                    onChange={(e) => setMessageInput(e.target.value)}
-                    placeholder={replyingTo ? `Replying to ${replyingTo.senderName}…` : `Message ${getRoomDisplayName(activeRoom)}...`}
-                    className="input-glass w-full pr-12"
-                  />
-                  <button
-                    type="submit"
-                    disabled={!messageInput.trim()}
-                    className="absolute right-2 p-2 rounded-lg transition-colors"
-                    style={{
-                      color: messageInput.trim() ? 'white' : 'var(--muted)',
-                      background: messageInput.trim() ? 'var(--primary)' : 'transparent'
-                    }}
-                  >
-                    <Send size={16} />
-                  </button>
-                </div>
-              </form>
+              <ChatInput 
+                activeRoom={activeRoom} 
+                userUid={userUid} 
+                userName={userName} 
+                replyingTo={replyingTo} 
+                setReplyingTo={setReplyingTo} 
+              />
             </>
           ) : (
             <div className="h-full flex flex-col items-center justify-center text-[var(--muted)]">
@@ -967,3 +814,224 @@ export default function CommunityPanel({
     </div>
   );
 }
+
+const ChatMessageItem = memo(({ 
+  msg, isMe, timeStr, onReply 
+}: { 
+  msg: ChatMessage, isMe: boolean, timeStr: string, 
+  onReply: (replyTo: {id: string, text: string, senderName: string}) => void 
+}) => {
+  const [isActive, setIsActive] = useState(false);
+  
+  const replyBtn = (
+    <motion.button
+      initial={false}
+      animate={{ opacity: isActive ? 1 : 0, scale: isActive ? 1 : 0.75 }}
+      transition={{ duration: 0.12 }}
+      onClick={(e) => {
+        e.stopPropagation();
+        onReply({ id: msg.id || '', text: msg.text, senderName: msg.senderName });
+        setIsActive(false);
+      }}
+      className="self-center flex-shrink-0 p-2 rounded-full"
+      style={{
+        background: 'rgba(99,102,241,0.14)',
+        border: '1px solid rgba(99,102,241,0.25)',
+        color: 'var(--primary)',
+        cursor: 'pointer',
+        pointerEvents: isActive ? 'auto' : 'none',
+      }}
+      title="Reply"
+      aria-label="Reply to message"
+    >
+      <CornerUpLeft size={13} />
+    </motion.button>
+  );
+
+  return (
+    <div
+      className={`flex ${isMe ? 'justify-end' : 'justify-start'} items-end gap-1`}
+      style={{ marginBottom: '2px' }}
+      onMouseEnter={() => setIsActive(true)}
+      onMouseLeave={() => setIsActive(false)}
+      onClick={() => setIsActive(!isActive)}
+    >
+      {/* Reply btn left (others' msgs) */}
+      {!isMe && <span className="mb-1">{replyBtn}</span>}
+
+      <div className={`max-w-[78%] sm:max-w-[80%] flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+        {!isMe && <span className="text-[10px] text-[var(--muted)] ml-1 mb-0.5 font-medium">{msg.senderName}</span>}
+        <div
+          className="px-3.5 py-2.5 rounded-2xl text-sm break-words leading-relaxed"
+          style={{
+            background: isMe ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)' : 'var(--surface)',
+            color: isMe ? 'white' : 'var(--foreground)',
+            border: isMe ? 'none' : '1px solid var(--border-color)',
+            boxShadow: isMe
+              ? '0 2px 10px rgba(99,102,241,0.25)'
+              : '0 1px 3px rgba(0,0,0,0.1)',
+            borderBottomRightRadius: isMe ? '4px' : '18px',
+            borderBottomLeftRadius: !isMe ? '4px' : '18px',
+          }}
+        >
+          {/* Quoted reply preview */}
+          {msg.replyToId && msg.replyToText && (
+            <div
+              className="mb-2 px-2 py-1.5 rounded-lg"
+              style={{
+                background: isMe ? 'rgba(255,255,255,0.13)' : 'rgba(99,102,241,0.08)',
+                borderLeft: `3px solid ${isMe ? 'rgba(255,255,255,0.55)' : 'var(--primary)'}`,
+              }}
+            >
+              <p
+                className="text-[10px] font-bold mb-0.5 truncate"
+                style={{ color: isMe ? 'rgba(255,255,255,0.8)' : 'var(--primary)' }}
+              >
+                {msg.replyToSenderName}
+              </p>
+              <p
+                className="text-[11px] leading-snug"
+                style={{
+                  color: isMe ? 'rgba(255,255,255,0.65)' : 'var(--muted)',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                }}
+              >
+                {msg.replyToText}
+              </p>
+            </div>
+          )}
+          {msg.text}
+        </div>
+        {/* Timestamp */}
+        {timeStr && (
+          <span
+            className="text-[9px] mt-0.5 select-none px-1"
+            style={{ color: 'var(--muted)', opacity: 0.6 }}
+          >
+            {timeStr}
+          </span>
+        )}
+      </div>
+
+      {/* Reply btn right (own msgs) */}
+      {isMe && <span className="mb-1">{replyBtn}</span>}
+    </div>
+  );
+});
+ChatMessageItem.displayName = 'ChatMessageItem';
+
+const ChatInput = memo(({
+  activeRoom, userUid, userName, replyingTo, setReplyingTo
+}: {
+  activeRoom: Room;
+  userUid: string;
+  userName: string;
+  replyingTo: { id: string, text: string, senderName: string } | null;
+  setReplyingTo: (r: null) => void;
+}) => {
+  const [messageInput, setMessageInput] = useState('');
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!messageInput.trim()) return;
+
+    const text = messageInput.trim();
+    const replySnapshot = replyingTo ? { ...replyingTo } : null;
+    setMessageInput('');
+    setReplyingTo(null);
+
+    await sendMessage(
+      activeRoom.id,
+      text,
+      userUid,
+      userName,
+      replySnapshot
+        ? {
+            replyToId: replySnapshot.id,
+            replyToText: replySnapshot.text,
+            replyToSenderName: replySnapshot.senderName,
+          }
+        : undefined
+    );
+  };
+
+  const getRoomDisplayName = (room: Room) => {
+    if (room.type === 'dm') {
+      if (room.members.length === 1) {
+        return `Pending DM (${room.inviteCode || 'Created'})`;
+      }
+      if (room.dmUserNames) {
+        const otherUid = room.members.find(uid => uid !== userUid);
+        if (otherUid && room.dmUserNames[otherUid]) {
+          return room.dmUserNames[otherUid];
+        }
+      }
+    }
+    return room.name;
+  };
+
+  return (
+    <form onSubmit={handleSendMessage} className="p-3 border-t" style={{ borderColor: 'var(--border-color)' }}>
+      {/* Reply bar */}
+      <AnimatePresence>
+        {replyingTo && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="flex items-center gap-2 mb-2 px-3 py-2 rounded-xl"
+            style={{
+              background: 'rgba(99,102,241,0.08)',
+              border: '1px solid rgba(99,102,241,0.2)',
+              borderLeft: '3px solid var(--primary)',
+            }}
+          >
+            <CornerUpLeft size={13} style={{ color: 'var(--primary)', flexShrink: 0 }} />
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] font-bold" style={{ color: 'var(--primary)' }}>
+                Replying to {replyingTo.senderName}
+              </p>
+              <p className="text-[11px] truncate" style={{ color: 'var(--muted)' }}>
+                {replyingTo.text}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setReplyingTo(null)}
+              className="p-1 rounded-full flex-shrink-0"
+              style={{ background: 'rgba(255,255,255,0.06)', border: 'none', cursor: 'pointer', color: 'var(--muted)' }}
+              aria-label="Cancel reply"
+            >
+              <X size={13} />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <div className="relative flex items-center">
+        <input
+          type="text"
+          value={messageInput}
+          onChange={(e) => setMessageInput(e.target.value)}
+          placeholder={replyingTo ? `Replying to ${replyingTo.senderName}…` : `Message ${getRoomDisplayName(activeRoom)}...`}
+          className="input-glass w-full pr-12"
+        />
+        <button
+          type="submit"
+          disabled={!messageInput.trim()}
+          className="absolute right-2 p-2 rounded-lg transition-colors"
+          style={{
+            color: messageInput.trim() ? 'white' : 'var(--muted)',
+            background: messageInput.trim() ? 'var(--primary)' : 'transparent'
+          }}
+        >
+          <Send size={16} />
+        </button>
+      </div>
+    </form>
+  );
+});
+ChatInput.displayName = 'ChatInput';
+

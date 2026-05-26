@@ -100,7 +100,7 @@ export default function LandingPage({ onEnterApp }: LandingPageProps) {
           transition={{ duration: 2.5, ease: 'easeOut' }}
         >
           <NextImage
-            src="/logo.png"
+            src="/logo.webp"
             alt=""
             width={900}
             height={700}
@@ -131,7 +131,7 @@ export default function LandingPage({ onEnterApp }: LandingPageProps) {
               style={{ background: 'linear-gradient(135deg, var(--primary), var(--accent))', padding: '5px' }}
             >
               <NextImage
-                src="/icon.png"
+                src="/icon.webp"
                 alt="VidyaVerse"
                 width={20}
                 height={20}
@@ -467,7 +467,7 @@ export default function LandingPage({ onEnterApp }: LandingPageProps) {
         >
           {/* Full logo — proper readable size */}
           <NextImage
-            src="/logo.png"
+            src="/logo.webp"
             alt="VidyaVerse Logo"
             width={160}
             height={120}

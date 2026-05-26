@@ -122,7 +122,7 @@ export default function Sidebar({
                   <motion.div
                     layoutId="activeIndicator"
                     className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full"
-                    style={{ background: 'linear-gradient(180deg, #6366f1, #818cf8)' }}
+                    style={{ background: 'linear-gradient(180deg, #6366f1, #818cf8)', willChange: 'transform' }}
                     transition={{ type: 'spring', stiffness: 500, damping: 35 }}
                   />
                 )}

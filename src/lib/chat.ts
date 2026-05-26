@@ -1,7 +1,7 @@
 import { 
   collection, doc, setDoc, getDoc, getDocs, updateDoc, deleteDoc,
   query, where, orderBy, onSnapshot, serverTimestamp, arrayUnion,
-  addDoc
+  addDoc, limit
 } from 'firebase/firestore';
 import { db, UserProfile } from './firebase';
 
@@ -180,9 +180,9 @@ export async function sendMessage(
 /**
  * Subscribe to messages in a room
  */
-export function subscribeToMessages(roomId: string, callback: (messages: ChatMessage[]) => void) {
+export function subscribeToMessages(roomId: string, limitCount: number, callback: (messages: ChatMessage[]) => void) {
   const messagesRef = collection(db, 'rooms', roomId, 'messages');
-  const q = query(messagesRef, orderBy('timestamp', 'asc'));
+  const q = query(messagesRef, orderBy('timestamp', 'desc'), limit(limitCount));
 
   return onSnapshot(q, (snapshot) => {
     const messages: ChatMessage[] = [];
@@ -199,7 +199,8 @@ export function subscribeToMessages(roomId: string, callback: (messages: ChatMes
         replyToSenderName: data.replyToSenderName,
       });
     });
-    callback(messages);
+    // Reverse to maintain chronological order for display
+    callback(messages.reverse());
   });
 }
 

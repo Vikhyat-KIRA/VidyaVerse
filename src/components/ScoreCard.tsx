@@ -154,8 +154,8 @@ export default function ScoreCard({ userName, userXp, userStreak, onClose }: Sco
     const canvas = generateCanvas();
     if (!canvas) return;
     const link = document.createElement('a');
-    link.download = `vidyaverse-${userName.toLowerCase().replace(/\s+/g, '-')}-scorecard.png`;
-    link.href = canvas.toDataURL('image/png');
+    link.download = `vidyaverse-${userName.toLowerCase().replace(/\s+/g, '-')}-scorecard.webp`;
+    link.href = canvas.toDataURL('image/webp');
     link.click();
   };
 
@@ -165,7 +165,7 @@ export default function ScoreCard({ userName, userXp, userStreak, onClose }: Sco
 
     canvas.toBlob(async (blob) => {
       if (!blob) return;
-      const file = new File([blob], 'vidyaverse-scorecard.png', { type: 'image/png' });
+      const file = new File([blob], 'vidyaverse-scorecard.webp', { type: 'image/webp' });
 
       if (navigator.canShare?.({ files: [file] })) {
         try {
@@ -179,14 +179,14 @@ export default function ScoreCard({ userName, userXp, userStreak, onClose }: Sco
         // Fallback: copy image to clipboard
         try {
           await navigator.clipboard.write([
-            new ClipboardItem({ 'image/png': blob })
+            new ClipboardItem({ 'image/webp': blob })
           ]);
           alert('Scorecard copied to clipboard! Paste it anywhere.');
         } catch {
           handleDownload();
         }
       }
-    }, 'image/png');
+    }, 'image/webp');
   };
 
   return (
@@ -253,7 +253,7 @@ export default function ScoreCard({ userName, userXp, userStreak, onClose }: Sco
             onClick={handleDownload}
             className="btn-ghost flex items-center gap-2 px-4 py-2.5 text-sm"
           >
-            <Download size={15} /> Save PNG
+            <Download size={15} /> Save WebP
           </button>
           <button
             onClick={handleShare}
