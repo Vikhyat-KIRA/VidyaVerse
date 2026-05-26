@@ -922,56 +922,110 @@ select.input-glass {
   100% { transform: rotate(0deg);   opacity: 0; }
 }
 
-/* ========== WATERFALL LIGHT BEAM ANIMATION ========== */
-@keyframes waterfall-flow {
-  0%   { transform: translateY(-110%); opacity: 0; }
-  8%   { opacity: 1; }
-  92%  { opacity: 1; }
-  100% { transform: translateY(110%); opacity: 0; }
+/* ========== HULY-STYLE DRAMATIC LIGHT CONE ========== */
+
+@keyframes beam-breathe {
+  0%, 100% { opacity: 0.8; }
+  50%       { opacity: 1; }
 }
 
+@keyframes beam-pulse {
+  0%, 100% {
+    opacity: 0.85;
+    box-shadow:
+      0 0 24px 10px rgba(255, 255, 255, 0.22),
+      0 0 80px 40px rgba(99, 102, 241, 0.18),
+      0 0 160px 80px rgba(99, 102, 241, 0.08);
+  }
+  50% {
+    opacity: 1;
+    box-shadow:
+      0 0 36px 16px rgba(255, 255, 255, 0.35),
+      0 0 110px 55px rgba(99, 102, 241, 0.28),
+      0 0 220px 110px rgba(99, 102, 241, 0.12);
+  }
+}
+
+/* Wrapper: full-width, anchored to top-center of hero */
 .waterfall-beam {
   position: absolute;
   top: 0;
-  bottom: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 2px;
-  background: linear-gradient(
-    to bottom,
-    transparent 0%,
-    rgba(99, 102, 241, 0.06) 20%,
-    rgba(6, 182, 212, 0.09) 50%,
-    rgba(99, 102, 241, 0.06) 80%,
-    transparent 100%
-  );
-  z-index: 1;
+  width: min(900px, 100%);
+  height: 100%;
   pointer-events: none;
+  z-index: 1;
   overflow: visible;
 }
 
+/* Wide ambient cone — conic gradient fanning downward */
+.waterfall-cone {
+  position: absolute;
+  top: -2%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 900px;
+  height: 85%;
+  background: conic-gradient(
+    from 247deg at 50% 0%,
+    transparent        0deg,
+    rgba(80, 70, 220, 0.04)  18deg,
+    rgba(99, 102, 241, 0.14) 30deg,
+    rgba(148, 160, 255, 0.2) 44deg,
+    rgba(200, 220, 255, 0.18) 54deg,
+    rgba(255, 255, 255, 0.1) 60deg,
+    rgba(200, 220, 255, 0.18) 66deg,
+    rgba(148, 160, 255, 0.2) 76deg,
+    rgba(99, 102, 241, 0.14) 90deg,
+    rgba(80, 70, 220, 0.04) 102deg,
+    transparent       120deg
+  );
+  filter: blur(8px);
+  animation: beam-breathe 5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Outer soft glow halo behind the cone */
+.waterfall-halo {
+  position: absolute;
+  top: -5%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 700px;
+  height: 70%;
+  background: radial-gradient(
+    ellipse 60% 80% at 50% 0%,
+    rgba(99, 102, 241, 0.22) 0%,
+    rgba(99, 102, 241, 0.1) 40%,
+    transparent 75%
+  );
+  filter: blur(30px);
+  animation: beam-breathe 6s ease-in-out infinite reverse;
+  pointer-events: none;
+}
+
+/* The bright white center spike line */
 .waterfall-shimmer {
   position: absolute;
   top: 0;
-  left: -6px;
-  width: 14px;
-  height: 180px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 3px;
+  height: 62%;
   background: linear-gradient(
     to bottom,
-    transparent 0%,
-    rgba(255, 255, 255, 0.3) 15%,
-    rgba(255, 255, 255, 0.95) 45%,
-    rgba(6, 182, 212, 0.9) 65%,
-    rgba(99, 102, 241, 0.5) 85%,
-    transparent 100%
+    rgba(255, 255, 255, 1)   0%,
+    rgba(220, 230, 255, 0.9) 20%,
+    rgba(147, 160, 255, 0.7) 45%,
+    rgba(99, 102, 241, 0.4)  70%,
+    transparent              100%
   );
-  filter: blur(3px);
   border-radius: 9999px;
-  box-shadow:
-    0 0 12px 4px rgba(6, 182, 212, 0.5),
-    0 0 28px 8px rgba(99, 102, 241, 0.25);
-  animation: waterfall-flow 4s cubic-bezier(0.25, 0.1, 0.25, 1) infinite;
+  animation: beam-pulse 4s ease-in-out infinite;
+  pointer-events: none;
 }
+
 
 
 

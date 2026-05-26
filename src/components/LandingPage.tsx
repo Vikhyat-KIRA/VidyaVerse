@@ -82,6 +82,7 @@ function AnimatedStat({ value, label, delay }: { value: string; label: string; d
 export default function LandingPage({ onEnterApp }: LandingPageProps) {
   const [customizerOpen, setCustomizerOpen] = useState(false);
   const [scrollY, setScrollY] = useState(0);
+  const [heroHovered, setHeroHovered] = useState(false);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -175,11 +176,17 @@ export default function LandingPage({ onEnterApp }: LandingPageProps) {
       </motion.nav>
 
       {/* ══════════════ HERO SECTION ══════════════ */}
-      <section className="relative min-h-screen flex flex-col items-center justify-center text-center px-4 pt-20 pb-16 overflow-hidden">
+      <section
+        className="relative min-h-screen flex flex-col items-center justify-center text-center px-4 pt-20 pb-16 overflow-hidden"
+        onMouseEnter={() => setHeroHovered(true)}
+        onMouseLeave={() => setHeroHovered(false)}
+      >
         {/* Background glow blobs */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {/* Huly Waterfall Light Beam */}
+          {/* Huly Dramatic Light Cone */}
           <div className="waterfall-beam">
+            <div className="waterfall-halo" />
+            <div className="waterfall-cone" />
             <div className="waterfall-shimmer" />
           </div>
 
@@ -328,8 +335,8 @@ export default function LandingPage({ onEnterApp }: LandingPageProps) {
         {/* Left: VAYU chat bubble */}
         <motion.div
           initial={{ opacity: 0, x: -30 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 1.2, duration: 0.8 }}
+          animate={heroHovered ? { opacity: 1, x: 0 } : { opacity: 0, x: -30 }}
+          transition={{ duration: 0.45, ease: 'easeOut' }}
           className="absolute left-4 top-1/3 hidden lg:block pointer-events-none z-10"
         >
           <motion.div
@@ -363,8 +370,8 @@ export default function LandingPage({ onEnterApp }: LandingPageProps) {
         {/* Left-lower: XP Streak chip */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 1.6, duration: 0.7 }}
+          animate={heroHovered ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
+          transition={{ duration: 0.45, ease: 'easeOut', delay: 0.06 }}
           className="absolute left-6 bottom-1/3 hidden lg:block pointer-events-none z-10"
         >
           <motion.div
@@ -393,8 +400,8 @@ export default function LandingPage({ onEnterApp }: LandingPageProps) {
         {/* Right: Pomodoro mini-timer */}
         <motion.div
           initial={{ opacity: 0, x: 30 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 1.4, duration: 0.8 }}
+          animate={heroHovered ? { opacity: 1, x: 0 } : { opacity: 0, x: 30 }}
+          transition={{ duration: 0.45, ease: 'easeOut', delay: 0.03 }}
           className="absolute right-4 top-1/3 hidden lg:block pointer-events-none z-10"
         >
           <motion.div
@@ -441,8 +448,8 @@ export default function LandingPage({ onEnterApp }: LandingPageProps) {
         {/* Right-lower: Flashcard flip chip */}
         <motion.div
           initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 1.8, duration: 0.7 }}
+          animate={heroHovered ? { opacity: 1, x: 0 } : { opacity: 0, x: 20 }}
+          transition={{ duration: 0.45, ease: 'easeOut', delay: 0.09 }}
           className="absolute right-6 bottom-1/3 hidden lg:block pointer-events-none z-10"
         >
           <motion.div
