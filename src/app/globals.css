@@ -687,4 +687,150 @@ select.input-glass {
   animation: unlock 2.5s ease-in-out infinite;
 }
 
+/* ========== HIGH-TECH HULY CLOCK DIAL ========== */
+.huly-clock-dial {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: radial-gradient(circle at center, #121214 30%, #09090b 80%, #1e1e21 100%);
+  border: 3px solid rgba(63, 63, 70, 0.45);
+  box-shadow: 
+    0 16px 48px rgba(0, 0, 0, 0.65), 
+    inset 0 2px 8px rgba(255, 255, 255, 0.04);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  will-change: transform;
+}
+
+.huly-clock-dial::after {
+  content: "";
+  position: absolute;
+  inset: -16px;
+  z-index: -1;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(249, 115, 22, 0.1) 50%, transparent 80%);
+  filter: blur(20px);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* Glowing Accent Arc */
+.huly-clock-glow-arc {
+  position: absolute;
+  inset: 12px;
+  border-radius: 50%;
+  border: 1.5px solid transparent;
+  border-left-color: rgba(99, 102, 241, 0.8);
+  border-top-color: rgba(249, 115, 22, 0.7);
+  box-shadow: 
+    inset 0 0 12px rgba(99, 102, 241, 0.15),
+    0 0 16px rgba(99, 102, 241, 0.3);
+  pointer-events: none;
+}
+
+/* Center Pin */
+.huly-clock-center-pin {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.9);
+  z-index: 30;
+  position: absolute;
+}
+
+/* Hands Base */
+.huly-clock-hand {
+  position: absolute;
+  bottom: 50%;
+  left: calc(50% - 1.5px);
+  transform-origin: bottom center;
+  z-index: 20;
+  border-radius: 9999px;
+  will-change: transform;
+}
+
+/* Hour Hand (Orange Gradient, shorter) */
+.huly-clock-hand-hour {
+  width: 3px;
+  height: 42px;
+  background: linear-gradient(to top, #ea580c, #f97316);
+  box-shadow: 0 0 8px rgba(249, 115, 22, 0.65);
+  animation: clock-spin-hour 6s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+}
+
+/* Minute Hand (Blue Gradient, longer) */
+.huly-clock-hand-minute {
+  width: 2.5px;
+  height: 60px;
+  background: linear-gradient(to top, #2563eb, #3b82f6, #00f0ff);
+  box-shadow: 0 0 12px rgba(6, 182, 212, 0.75);
+  animation: clock-spin-minute 6s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+}
+
+/* Seconds Hand (Thin white needle) */
+.huly-clock-hand-second {
+  width: 1px;
+  height: 68px;
+  background: #71717a;
+  opacity: 0.65;
+  left: calc(50% - 0.5px);
+  animation: clock-spin-second 6s linear infinite;
+}
+
+@keyframes clock-spin-second {
+  0% { transform: rotate(0deg); }
+  40% { transform: rotate(180deg); } /* Slow tick */
+  85% { transform: rotate(1980deg); } /* 5 full rapid rotations */
+  100% { transform: rotate(1980deg); }
+}
+
+@keyframes clock-spin-minute {
+  0% { transform: rotate(0deg); }
+  40% { transform: rotate(90deg); } /* Slow ticking for 1-2s */
+  85% { transform: rotate(1170deg); } /* 3 full rapid rotations */
+  100% { transform: rotate(1170deg); }
+}
+
+@keyframes clock-spin-hour {
+  0% { transform: rotate(0deg); }
+  40% { transform: rotate(15deg); }
+  85% { transform: rotate(375deg); } /* 1 full fast rotation */
+  100% { transform: rotate(375deg); }
+}
+
+/* ========== WATERFALL LIGHT BEAM ANIMATION ========== */
+@keyframes waterfall {
+  0% { transform: translateY(-100%); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(100%); opacity: 0; }
+}
+
+.waterfall-beam {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1px;
+  background: linear-gradient(to bottom, transparent, rgba(99, 102, 241, 0.08), rgba(6, 182, 212, 0.08), transparent);
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.waterfall-shimmer {
+  position: absolute;
+  left: -1px;
+  width: 3px;
+  height: 250px;
+  background: linear-gradient(to bottom, transparent, #ffffff, var(--accent), transparent);
+  box-shadow: 0 0 20px var(--accent);
+  animation: waterfall 6s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+  opacity: 0.8;
+}
+
+
 

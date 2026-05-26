@@ -170,6 +170,11 @@ export default function LandingPage({ onEnterApp }: LandingPageProps) {
       <section className="relative min-h-screen flex flex-col items-center justify-center text-center px-4 pt-20 pb-16 overflow-hidden">
         {/* Background glow blobs */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {/* Huly Waterfall Light Beam */}
+          <div className="waterfall-beam">
+            <div className="waterfall-shimmer" />
+          </div>
+
           <motion.div
             animate={{ x: [0, 40, -20, 0], y: [0, -30, 20, 0] }}
             transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
@@ -786,28 +791,73 @@ export default function LandingPage({ onEnterApp }: LandingPageProps) {
 
       {/* ══════════════ FINAL CTA ══════════════ */}
       <section className="relative z-10 py-16 md:py-24 px-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="max-w-2xl mx-auto text-center"
-        >
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4" style={{ color: 'var(--foreground)' }}>
-            Ready to <span className="gradient-text">Level Up</span>?
-          </h2>
-          <p className="text-sm mb-8 max-w-md mx-auto" style={{ color: 'var(--muted)' }}>
-            Join the study revolution. Your AI-powered academic universe awaits.
-          </p>
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            onClick={onEnterApp}
-            className="btn-radiant-glow text-sm py-3.5 px-10 inline-flex items-center gap-2"
+        <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center text-center md:text-left">
+          
+          {/* Left Column: Premium Circular Clock Widget */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            className="flex justify-center md:justify-end"
           >
-            <Sparkles size={15} />
-            Launch VidyaVerse
-            <ArrowRight size={15} />
-          </motion.button>
-        </motion.div>
+            <div className="huly-clock-dial scale-[1.1] md:mr-8 select-none">
+              {/* Watch Crown on the right side */}
+              <div className="absolute right-[-7px] top-[calc(50%-10px)] w-[8px] h-[20px] bg-zinc-700 rounded-[2px] border border-zinc-950 shadow-md" />
+              
+              {/* Subtle watch dial texture grid */}
+              <div className="absolute inset-[15px] rounded-full opacity-[0.06] bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.85)_1px,transparent_0)] bg-[size:10px_10px] pointer-events-none" />
+              
+              {/* Subtle cross / shield brand watermark in center */}
+              <div className="absolute w-[60px] h-[60px] opacity-[0.12] flex items-center justify-center pointer-events-none">
+                <div className="w-[32px] h-[32px] border-[6px] border-white rounded-[6px] rotate-45" />
+              </div>
+
+              {/* Luminous high-tech markers */}
+              <span className="absolute top-[18px] text-[8px] text-zinc-500 font-extrabold tracking-wider">12</span>
+              <span className="absolute right-[44px] top-[26px] text-[8px] text-zinc-600 font-extrabold tracking-wider">1</span>
+              <span className="absolute right-[24px] top-[48px] text-[8px] text-zinc-600 font-extrabold tracking-wider">2</span>
+              <span className="absolute right-[18px] top-[calc(50%-5px)] text-[8px] text-zinc-600 font-extrabold tracking-wider">3</span>
+              <span className="absolute right-[24px] bottom-[48px] text-[8px] text-zinc-600 font-extrabold tracking-wider">4</span>
+              <span className="absolute left-[24px] bottom-[48px] text-[8px] text-zinc-600 font-extrabold tracking-wider">8</span>
+              <span className="absolute left-[18px] top-[calc(50%-5px)] text-[8px] text-zinc-600 font-extrabold tracking-wider">9</span>
+              <span className="absolute left-[24px] top-[48px] text-[8px] text-zinc-600 font-extrabold tracking-wider">10</span>
+
+              {/* Glow Arc Layer */}
+              <div className="huly-clock-glow-arc" />
+              
+              {/* Hands and Center Pin */}
+              <div className="huly-clock-center-pin" />
+              <div className="huly-clock-hand huly-clock-hand-hour" />
+              <div className="huly-clock-hand huly-clock-hand-minute" />
+              <div className="huly-clock-hand huly-clock-hand-second" />
+            </div>
+          </motion.div>
+
+          {/* Right Column: Title text & Start actions */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            className="flex flex-col items-center md:items-start max-w-md mx-auto md:mx-0"
+          >
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4" style={{ color: 'var(--foreground)' }}>
+              Ready to <span className="gradient-text">Level Up</span>?
+            </h2>
+            <p className="text-sm mb-8" style={{ color: 'var(--muted)' }}>
+              Join the study revolution. Your AI-powered academic universe awaits.
+            </p>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={onEnterApp}
+              className="btn-radiant-glow text-sm py-3.5 px-10 inline-flex items-center gap-2"
+            >
+              <Sparkles size={15} />
+              Launch VidyaVerse
+              <ArrowRight size={15} />
+            </motion.button>
+          </motion.div>
+
+        </div>
       </section>
 
       {/* ══════════════ FOOTER ══════════════ */}
