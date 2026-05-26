@@ -421,20 +421,10 @@ select.input-glass {
   background: linear-gradient(90deg, transparent, var(--border-color), transparent);
 }
 
-/* ========== MOBILE RESPONSIVE ========== */
-@media (max-width: 768px) {
-  .sidebar-desktop {
-    display: none;
-  }
-  .mobile-nav {
-    display: flex;
-  }
-}
-@media (min-width: 769px) {
-  .mobile-nav {
-    display: none;
-  }
-}
+/* ========== MOBILE RESPONSIVE ==========
+   Leveraging native Tailwind responsive utilities (hidden md:flex, flex md:hidden)
+   for robust breakpoint alignment across all display resolutions.
+========================================= */
 
 /* ========== FLASHCARD 3D FLIP ========== */
 .perspective-1000 {
