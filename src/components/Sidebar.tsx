@@ -52,7 +52,7 @@ export default function Sidebar({
     <>
       {/* ── Desktop Sidebar ───────────────────────────────── */}
       <aside
-        className="sidebar-desktop fixed left-0 top-0 bottom-0 w-[68px] flex flex-col items-center py-3 z-50"
+        className="hidden md:flex fixed left-0 top-0 bottom-0 w-[68px] flex-col items-center py-3 z-50"
         style={{
           background: 'var(--sidebar-bg)',
           backdropFilter: 'blur(24px) saturate(180%)',
@@ -253,7 +253,7 @@ export default function Sidebar({
 
       {/* ── Mobile Bottom Nav ─────────────────────────────── */}
       <nav
-        className="mobile-nav fixed bottom-0 left-0 right-0 z-50 px-2 py-1.5"
+        className="flex md:hidden fixed bottom-0 left-0 right-0 z-50 px-2 py-1.5"
         style={{
           background: 'var(--mobile-nav-bg)',
           backdropFilter: 'blur(24px) saturate(180%)',
