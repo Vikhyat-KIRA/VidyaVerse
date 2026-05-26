@@ -2,15 +2,18 @@
 
 import { useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, X, Loader2, ImageIcon, Zap, Eye, Database, CheckCircle2 } from 'lucide-react';
+import { Upload, X, Loader2, ImageIcon, Zap, Eye, Database, CheckCircle2, AlertCircle } from 'lucide-react';
 import { analyzeImageWithVayu } from '@/lib/gemini';
 import { saveToVault } from '@/lib/vault';
+import { awardXp } from '@/lib/exp';
+import { useToast } from '@/components/Toast';
 
 interface FlashForgeProps {
   userUid: string;
 }
 
 export default function FlashForge({ userUid }: FlashForgeProps) {
+  const toast = useToast();
   const [isDragging, setIsDragging] = useState(false);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<string | null>(null);
@@ -31,14 +34,17 @@ export default function FlashForge({ userUid }: FlashForgeProps) {
   }, []);
 
   const processFile = useCallback((file: File) => {
-    if (!file.type.startsWith('image/')) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Only image study materials are accepted currently.');
+      return;
+    }
     const reader = new FileReader();
     reader.onload = (e) => {
       setUploadedImage(e.target?.result as string);
       setAnalysis(null);
     };
     reader.readAsDataURL(file);
-  }, []);
+  }, [toast]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -60,8 +66,10 @@ export default function FlashForge({ userUid }: FlashForgeProps) {
       const result = await analyzeImageWithVayu(userUid, base64, context || undefined);
       setAnalysis(result);
       setIsSaved(false);
+      await awardXp(userUid, 15); // +15 XP for uploading!
+      toast.success('✨ Analysis complete! +15 XP');
     } catch {
-      setAnalysis('⚠️ Analysis failed. Please try again.');
+      setAnalysis('⚠️ OCR/Vision stream aborted. Please re-try.');
     } finally {
       setIsAnalyzing(false);
     }
@@ -73,6 +81,7 @@ export default function FlashForge({ userUid }: FlashForgeProps) {
     try {
       await saveToVault(userUid, analysis);
       setIsSaved(true);
+      toast.success('Information securely locked into memory vault');
     } catch (err) {
       console.error('Failed to save to vault:', err);
     } finally {
@@ -87,189 +96,147 @@ export default function FlashForge({ userUid }: FlashForgeProps) {
   };
 
   return (
-    <div className="h-full flex flex-col">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-4">
-        <div className="p-2 rounded-xl" style={{ background: 'rgba(0, 240, 255, 0.1)' }}>
-          <Zap size={20} style={{ color: '#00f0ff' }} />
-        </div>
-        <div>
-          <h2 className="text-lg font-bold" style={{ color: 'var(--foreground)' }}>
-            Flash-Forge
-          </h2>
-          <p className="text-xs" style={{ color: 'var(--muted)' }}>
-            Vision OCR • AI Analysis
-          </p>
+    <div className="h-full flex flex-col p-4 overflow-hidden">
+      {/* 1. Header Toolbar */}
+      <div className="flex justify-between items-center border-b border-sys-groove pb-3 mb-4 bg-zinc-950/10 p-3 rounded-[4px]">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-zinc-900 border border-sys-groove text-purple-400 rounded-[4px]">
+            <Zap size={18} className="animate-pulse" />
+          </div>
+          <div>
+            <h2 className="text-sm font-bold text-white tracking-tight uppercase">Forge Analysis Chamber</h2>
+            <p className="text-[10px] text-zinc-500 font-mono mt-0.5">VISION OCR & EXPLANATION CORE</p>
+          </div>
         </div>
       </div>
 
-      {/* Content Area */}
-      <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
-        <AnimatePresence mode="wait">
-          {!uploadedImage ? (
-            /* Drop Zone */
-            <motion.div
-              key="dropzone"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className={`drop-zone flex flex-col items-center justify-center gap-4 min-h-[240px] ${isDragging ? 'active' : ''}`}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <motion.div
-                animate={isDragging ? { scale: 1.1, y: -5 } : { scale: 1, y: 0 }}
-                transition={{ type: 'spring', stiffness: 300 }}
-              >
-                <div className="p-4 rounded-2xl" style={{ 
-                  background: isDragging ? 'rgba(0, 240, 255, 0.15)' : 'rgba(108, 99, 255, 0.1)',
-                  transition: 'all 0.3s ease',
-                }}>
-                  <Upload size={32} style={{ color: isDragging ? '#00f0ff' : '#6c63ff' }} />
-                </div>
-              </motion.div>
-              <div className="text-center">
-                <p className="font-semibold text-sm" style={{ color: 'var(--foreground)' }}>
-                  {isDragging ? 'Drop it here!' : 'Drop your study material'}
-                </p>
-                <p className="text-xs mt-1" style={{ color: 'var(--muted)' }}>
-                  Textbook pages, circuits, diagrams — VAYU will break it down
-                </p>
-              </div>
-              <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--muted)' }}>
-                <ImageIcon size={12} />
-                <span>PNG, JPG, WEBP up to 10MB</span>
-              </div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleFileSelect}
+      {/* 2. Content view */}
+      <div className="flex-1 overflow-y-auto pr-1 space-y-4 custom-scrollbar">
+        {!uploadedImage ? (
+          /* Rigid Upload block */
+          <div
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+            className={`w-full min-h-[220px] flex flex-col items-center justify-center gap-3 p-6 bg-zinc-900/10 border-2 border-dashed rounded-[4px] cursor-pointer spring-transition ${
+              isDragging ? 'border-purple-500 bg-purple-950/5' : 'border-sys-groove hover:border-zinc-800'
+            }`}
+          >
+            <div className="w-12 h-12 bg-zinc-950 border border-sys-groove flex items-center justify-center text-zinc-400 rounded">
+              <Upload size={20} className={isDragging ? 'text-purple-400 animate-bounce' : 'text-zinc-500'} />
+            </div>
+
+            <div className="text-center">
+              <p className="text-xs font-bold text-zinc-200">
+                {isDragging ? 'DROP STUDY MATERIAL' : 'UPLOAD SCHEMATICS & EQUATIONS'}
+              </p>
+              <p className="text-[10px] text-zinc-500 mt-1 max-w-xs mx-auto">
+                Drag diagrams, formulas, slides, or notebook screenshots. VAYU will extract and formulate study insights.
+              </p>
+            </div>
+
+            <span className="text-[9px] font-mono text-zinc-600">PNG, JPG, WEBP SUPPORTED</span>
+            
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleFileSelect}
+            />
+          </div>
+        ) : (
+          /* Preview state */
+          <div className="space-y-4">
+            {/* Image Box */}
+            <div className="relative rounded-[4px] overflow-hidden border border-sys-groove bg-zinc-950 p-2">
+              <img
+                src={uploadedImage}
+                alt="Studying schema"
+                className="w-full max-h-[160px] object-contain rounded"
               />
-            </motion.div>
-          ) : (
-            /* Image Preview & Analysis */
-            <motion.div
-              key="preview"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="space-y-4"
-            >
-              {/* Image Preview */}
-              <div className="relative rounded-xl overflow-hidden" style={{ border: '1px solid var(--border-color)' }}>
-                <img
-                  src={uploadedImage}
-                  alt="Uploaded study material"
-                  className="w-full max-h-[200px] object-contain"
-                  style={{ background: 'rgba(0,0,0,0.3)' }}
-                />
-                <button
-                  onClick={clearImage}
-                  className="absolute top-2 right-2 p-1.5 rounded-lg"
-                  style={{
-                    background: 'rgba(0,0,0,0.6)',
-                    backdropFilter: 'blur(10px)',
-                  }}
-                >
-                  <X size={14} style={{ color: 'white' }} />
-                </button>
-              </div>
-
-              {/* Context Input */}
-              <div>
-                <label className="text-xs font-medium mb-1.5 block" style={{ color: 'var(--muted)' }}>
-                  Add context (optional)
-                </label>
-                <input
-                  type="text"
-                  value={context}
-                  onChange={(e) => setContext(e.target.value)}
-                  placeholder="e.g., Chapter 5, Ohm's Law, Page 42..."
-                  className="input-glass text-sm"
-                />
-              </div>
-
-              {/* Analyze Button */}
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={handleAnalyze}
-                disabled={isAnalyzing}
-                className="w-full py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50"
-                style={{
-                  background: isAnalyzing 
-                    ? 'rgba(108, 99, 255, 0.3)' 
-                    : 'linear-gradient(135deg, #6c63ff, #00f0ff)',
-                  color: 'white',
-                  border: 'none',
-                  cursor: isAnalyzing ? 'wait' : 'pointer',
-                }}
+              <button
+                onClick={clearImage}
+                className="absolute top-3 right-3 p-1.5 rounded bg-zinc-950 border border-sys-groove text-zinc-400 hover:text-white cursor-pointer spring-transition"
+                title="Discard image"
               >
-                {isAnalyzing ? (
-                  <>
-                    <Loader2 size={16} className="animate-spin" />
-                    VAYU is analyzing...
-                  </>
-                ) : (
-                  <>
-                    <Eye size={16} />
-                    Analyze with Flash-Forge
-                  </>
-                )}
-              </motion.button>
+                <X size={12} />
+              </button>
+            </div>
 
-              {/* Analysis Result */}
-              <AnimatePresence>
-                {analysis && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="glass-card p-4"
+            {/* Context manual note */}
+            <div>
+              <label className="text-[10px] font-mono font-bold tracking-wider text-zinc-500 uppercase block mb-1.5">
+                Target Concepts / Context
+              </label>
+              <input
+                type="text"
+                value={context}
+                onChange={(e) => setContext(e.target.value)}
+                placeholder="e.g. Chapter 4 mechanics, Ohm&apos;s law formula review..."
+                className="w-full bg-zinc-900/60 border border-sys-groove p-2 text-xs rounded text-zinc-200 outline-none focus:border-zinc-700"
+              />
+            </div>
+
+            {/* Trigger Button */}
+            <button
+              onClick={handleAnalyze}
+              disabled={isAnalyzing}
+              className="w-full py-2.5 bg-purple-600 hover:bg-purple-500 text-xs font-mono font-bold uppercase text-white rounded-[4px] cursor-pointer spring-transition mechanical-press flex items-center justify-center gap-1.5 disabled:opacity-40"
+            >
+              {isAnalyzing ? (
+                <>
+                  <Loader2 size={13} className="animate-spin" />
+                  INITIATING OCR STREAMING...
+                </>
+              ) : (
+                <>
+                  <Eye size={13} />
+                  FORGE INSIGHTS FROM DIAGRAM
+                </>
+              )}
+            </button>
+
+            {/* Output terminal */}
+            <AnimatePresence>
+              {analysis && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="p-4 bg-zinc-900 border border-sys-groove rounded-[4px] relative"
+                >
+                  <div className="flex items-center gap-1.5 text-purple-400 font-mono text-[10px] font-bold border-b border-sys-groove/40 pb-2 mb-3">
+                    <Zap size={12} className="animate-pulse" />
+                    DECRPYTED OCR TELEMETRY
+                  </div>
+
+                  <p className="text-xs text-zinc-300 leading-relaxed whitespace-pre-wrap mb-4 break-words select-text">
+                    {analysis}
+                  </p>
+
+                  <button
+                    onClick={handleSaveToVault}
+                    disabled={isSaving || isSaved}
+                    className={`w-full py-2 border text-[10px] font-mono font-bold uppercase rounded-[4px] cursor-pointer spring-transition flex items-center justify-center gap-1.5 ${
+                      isSaved
+                        ? 'bg-emerald-950/20 border-emerald-500/20 text-emerald-400'
+                        : 'bg-zinc-950 border-sys-groove text-zinc-400 hover:text-zinc-300'
+                    }`}
                   >
-                    <div className="flex items-center gap-2 mb-3">
-                      <Zap size={14} style={{ color: '#00f0ff' }} />
-                      <span className="text-xs font-bold" style={{ color: '#00f0ff' }}>
-                        VAYU ANALYSIS
-                      </span>
-                    </div>
-                    <div 
-                      className="text-sm leading-relaxed whitespace-pre-wrap mb-4 break-words"
-                      style={{ color: 'var(--foreground)' }}
-                    >
-                      {analysis}
-                    </div>
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={handleSaveToVault}
-                      disabled={isSaving || isSaved}
-                      className="w-full py-2 rounded-xl font-semibold text-xs flex items-center justify-center gap-2 transition-all"
-                      style={{
-                        background: isSaved ? 'rgba(52, 211, 153, 0.2)' : 'rgba(108, 99, 255, 0.15)',
-                        color: isSaved ? '#34d399' : '#6c63ff',
-                        border: `1px solid ${isSaved ? 'rgba(52, 211, 153, 0.3)' : 'rgba(108, 99, 255, 0.3)'}`,
-                        cursor: (isSaving || isSaved) ? 'default' : 'pointer',
-                      }}
-                    >
-                      {isSaving ? (
-                        <><Loader2 size={14} className="animate-spin" /> Saving...</>
-                      ) : isSaved ? (
-                        <><CheckCircle2 size={14} /> Saved to Memory Vault</>
-                      ) : (
-                        <><Database size={14} /> Save to Memory Vault</>
-                      )}
-                    </motion.button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                    {isSaving ? (
+                      <><Loader2 size={12} className="animate-spin" /> LOCKING MEMORY...</>
+                    ) : isSaved ? (
+                      <><CheckCircle2 size={12} /> SECURED IN MEMORY VAULT</>
+                    ) : (
+                      <><Database size={12} /> LOCK IN MEMORY VAULT</>
+                    )}
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
       </div>
     </div>
   );

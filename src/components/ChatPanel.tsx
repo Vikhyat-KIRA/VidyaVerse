@@ -18,13 +18,11 @@ interface AttachedFile {
   isImage: boolean;
 }
 
-// Local extension of ChatMessage to support reply threading
 interface LocalChatMessage extends ChatMessage {
   replyToContent?: string;
   replyToRole?: 'user' | 'assistant';
 }
 
-// ─── Markdown renderer helper ────────────────────────────────────────────────
 function renderMarkdown(text: string): string {
   return text
     .replace(/```([\s\S]*?)```/g, '<pre class="code-block"><code>$1</code></pre>')
@@ -43,7 +41,7 @@ export default function ChatPanel({ userUid, userName, onResponseComplete }: Cha
   const [messages, setMessages] = useState<LocalChatMessage[]>([
     {
       role: 'assistant',
-      content: `🔥 **Yo ${userName}! Welcome to VidyaVerse!**\n\nI'm VAYU — your AI study buddy, mentor, and the voice in your head that won't let you slack off.\n\nHere's what I can do:\n- 💬 Answer ANY academic question\n- 📄 Read PDFs, Word docs, and PowerPoints\n- 📸 Analyze textbook pages & circuits (use Flash-Forge)\n- ⏱️ Keep you focused with the Pomodoro Coach\n\n*So what are we working on today? Drop a question or a document and let's get started!*`,
+      content: `🔥 **Yo ${userName}! Welcome to VidyaVerse!**\n\nI'm VAYU — your AI study buddy, mentor, and the voice in your head that won't let you slack off.\n\nHere's what we can accomplish in this workspace:\n- 💬 Resolve any academic hurdles instantly\n- 📄 Audit textbook materials, lecture slides, and notes\n- 📸 Forge flashcards from visual equations (via Flash-Forge)\n- ⏱️ Force productive sprints in Pomodoro Co-op\n\n*Drop a question or attach your study files below and let's get after it!*`,
       timestamp: Date.now(),
     },
   ]);
@@ -51,7 +49,6 @@ export default function ChatPanel({ userUid, userName, onResponseComplete }: Cha
   const [isLoading, setIsLoading] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
   const [attachedFile, setAttachedFile] = useState<AttachedFile | null>(null);
-  // Reply state
   const [replyingTo, setReplyingTo] = useState<{ idx: number; content: string; role: 'user' | 'assistant' } | null>(null);
   const [activeMsgIdx, setActiveMsgIdx] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -66,7 +63,6 @@ export default function ChatPanel({ userUid, userName, onResponseComplete }: Cha
     scrollToBottom();
   }, [messages]);
 
-  // Auto-resize textarea
   useEffect(() => {
     const ta = textareaRef.current;
     if (!ta) return;
@@ -118,7 +114,6 @@ export default function ChatPanel({ userUid, userName, onResponseComplete }: Cha
       const reader = res.body?.getReader();
       if (!reader) throw new Error('No reader available');
 
-      // Add placeholder message
       setMessages(prev => [...prev, {
         role: 'assistant',
         content: '',
@@ -150,7 +145,7 @@ export default function ChatPanel({ userUid, userName, onResponseComplete }: Cha
     } catch {
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: '⚠️ Oops, had a hiccup. Please try again!',
+        content: '⚠️ Oops, encountered a stream glitch. Let&apos;s try again!',
         timestamp: Date.now(),
       }]);
     } finally {
@@ -192,338 +187,174 @@ export default function ChatPanel({ userUid, userName, onResponseComplete }: Cha
   };
 
   return (
-    <div className="h-full flex flex-col w-full h-full relative bg-transparent">
-      <div className="flex flex-col h-full overflow-hidden">
-        {/* ── Header ─────────────────────────────────────────── */}
-        <div
-          className="flex items-center gap-3 pb-3 mb-1 px-4 pt-4 shrink-0"
-          style={{ borderBottom: '1px solid var(--border-color)' }}
-        >
-          <VayuOrb size="sm" isSpeaking={isLoading || isStreaming} isThinking={isLoading} />
+    <div className="h-full flex flex-col w-full relative bg-transparent overflow-hidden">
+      {/* ── Dynamic Header ── */}
+      <div className="flex items-center gap-3 py-3 px-4 shrink-0 border-b border-sys-groove bg-zinc-950/10">
+        <VayuOrb size="sm" isSpeaking={isLoading || isStreaming} isThinking={isLoading} />
         <div className="flex-1 min-w-0">
-          <h2 className="text-base font-bold leading-tight" style={{ color: 'var(--foreground)' }}>
-            VAYU
-          </h2>
-          <div className="flex items-center gap-1.5 mt-0.5">
-            <span
-              className="inline-block w-1.5 h-1.5 rounded-full"
-              style={{
-                background: isLoading ? '#f59e0b' : isStreaming ? '#06b6d4' : '#10b981',
-                boxShadow: `0 0 6px ${isLoading ? '#f59e0b' : isStreaming ? '#06b6d4' : '#10b981'}`,
-              }}
-            />
-            <p className="text-xs" style={{ color: 'var(--muted)' }}>
-              {isLoading ? 'Reading document…' : isStreaming ? 'Composing reply…' : 'Online · Your AI Mentor'}
-            </p>
+          <h2 className="text-sm font-bold text-white tracking-tight">VAYU AI Mentor</h2>
+          <div className="flex items-center gap-1.5 mt-0.5 text-[10px] font-mono text-zinc-500">
+            <span className={`w-1.5 h-1.5 rounded-full ${isLoading || isStreaming ? 'bg-amber-500 animate-pulse-dot' : 'bg-emerald-500'}`} />
+            <span>{isLoading ? 'ANALYZING CONTEXT...' : isStreaming ? 'STREAMS COMMITTED' : 'SYSTEM LINK ACTIVE'}</span>
           </div>
         </div>
-        {/* Subtle branding */}
-        <div
-          className="flex items-center gap-1 px-2 py-1 rounded-lg"
-          style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.12)' }}
-        >
-          <Sparkles size={11} style={{ color: 'var(--primary)' }} />
-          <span className="text-[10px] font-semibold" style={{ color: 'var(--primary)', letterSpacing: '0.04em' }}>
-            Gemini
-          </span>
+        <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-purple-950/40 border border-purple-500/20 text-[9px] font-mono font-bold text-purple-400">
+          <Sparkles size={10} /> GEMINI_1.5_PRO
         </div>
       </div>
 
-      {/* ── Messages ────────────────────────────────────────── */}
-      <div
-        className="flex-1 overflow-y-auto py-3 px-4 space-y-3"
-        style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.06) transparent' }}
+      {/* ── High Density Flat Block Messages ── */}
+      <div 
+        className="flex-1 overflow-y-auto py-4 px-4 space-y-4 no-scrollbar bg-black/10"
         onClick={() => setActiveMsgIdx(null)}
       >
         <AnimatePresence initial={false}>
           {messages.map((msg, idx) => {
-            const m = msg as LocalChatMessage;
-            const isUser = m.role === 'user';
+            const isUser = msg.role === 'user';
             const isActive = activeMsgIdx === idx;
-            const timeStr = new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const timeStr = new Date(msg.timestamp).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit' });
 
-            const replyBtn = (
-              <motion.button
-                initial={false}
-                animate={{ opacity: isActive ? 1 : 0, scale: isActive ? 1 : 0.75 }}
-                transition={{ duration: 0.12 }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setReplyingTo({ idx, content: m.content, role: m.role });
-                  setActiveMsgIdx(null);
-                }}
-                className="self-end flex-shrink-0 p-2 rounded-full mb-5"
-                style={{
-                  background: 'rgba(99,102,241,0.14)',
-                  border: '1px solid rgba(99,102,241,0.25)',
-                  color: 'var(--primary)',
-                  cursor: 'pointer',
-                  pointerEvents: isActive ? 'auto' : 'none',
-                }}
-                title="Reply"
-                aria-label="Reply to this message"
-              >
-                <CornerUpLeft size={13} />
-              </motion.button>
-            );
-
-             return (
-              <motion.div
+            return (
+              <div 
                 key={idx}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-                style={{ willChange: 'transform, opacity' }}
-                className={`flex gap-1.5 items-end ${isUser ? 'justify-end' : 'justify-start'}`}
+                className="group relative flex gap-3.5 items-start py-3 border-b border-sys-groove/30 hover:bg-zinc-900/10 px-2 rounded-[2px] transition-colors duration-150"
                 onMouseEnter={() => setActiveMsgIdx(idx)}
                 onMouseLeave={() => setActiveMsgIdx(null)}
-                onClick={(e) => { e.stopPropagation(); setActiveMsgIdx(prev => prev === idx ? null : idx); }}
               >
-                {/* AI avatar (left) */}
-                {!isUser && (
-                  <div
-                    className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-[10px] font-bold"
-                    style={{
-                      background: 'linear-gradient(135deg, #6366f1, #06b6d4)',
-                      color: 'white',
-                      boxShadow: '0 0 0 2px rgba(99, 102, 241, 0.15)',
-                    }}
-                  >
-                    V
+                {/* 1. Square Avatar Block */}
+                <div className={`w-8 h-8 rounded-[4px] flex-shrink-0 flex items-center justify-center font-mono font-bold text-xs select-none border border-sys-groove ${
+                  isUser 
+                    ? 'bg-purple-950/40 text-purple-400 border-purple-500/20' 
+                    : 'bg-zinc-900 text-zinc-300'
+                }`}>
+                  {isUser ? userName.substring(0, 2).toUpperCase() : 'V'}
+                </div>
+
+                {/* 2. Message Body */}
+                <div className="flex-1 min-w-0">
+                  {/* Metadata Header */}
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className={`text-xs font-bold ${isUser ? 'text-purple-400' : 'text-zinc-300'}`}>
+                      {isUser ? userName : 'VAYU AI'}
+                    </span>
+                    <span className="text-[9px] font-mono text-zinc-500">{timeStr}</span>
                   </div>
-                )}
 
-                {/* Reply button — left of user bubble */}
-                {isUser && replyBtn}
-
-                <div
-                  className="max-w-[85%] sm:max-w-[82%] rounded-2xl"
-                  style={
-                    isUser
-                      ? {
-                          background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
-                          padding: '10px 14px',
-                          boxShadow: '0 2px 12px rgba(99, 102, 241, 0.25), 0 1px 3px rgba(0,0,0,0.2)',
-                          borderBottomRightRadius: '4px',
-                        }
-                      : {
-                          background: 'var(--surface)',
-                          border: '1px solid var(--border-color)',
-                          padding: '10px 14px',
-                          boxShadow: '0 1px 3px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.04)',
-                          borderBottomLeftRadius: '4px',
-                        }
-                  }
-                >
-                  {/* Quoted reply bubble */}
-                  {m.replyToContent && (
-                    <div
-                      className="mb-2 px-2 py-1.5 rounded-lg"
-                      style={{
-                        background: isUser ? 'rgba(255,255,255,0.13)' : 'rgba(99,102,241,0.08)',
-                        borderLeft: `3px solid ${isUser ? 'rgba(255,255,255,0.55)' : 'var(--primary)'}`,
-                      }}
-                    >
-                      <p
-                        className="text-[10px] font-bold mb-0.5"
-                        style={{ color: isUser ? 'rgba(255,255,255,0.8)' : 'var(--primary)' }}
-                      >
-                        {m.replyToRole === 'assistant' ? 'VAYU' : userName}
+                  {/* Quoted Thread */}
+                  {msg.replyToContent && (
+                    <div className="mb-2 px-2.5 py-1.5 rounded-[2px] bg-zinc-950/40 border-l-2 border-purple-500 text-[10px] text-zinc-500 max-w-xl">
+                      <p className="font-bold text-purple-400 mb-0.5">{msg.replyToRole === 'assistant' ? 'VAYU' : userName}</p>
+                      <p className="truncate italic">
+                        {msg.replyToContent.replace(/<[^>]*>/g, '').substring(0, 100)}
                       </p>
-                      <p
-                        className="text-[11px] leading-snug"
-                        style={{
-                          color: isUser ? 'rgba(255,255,255,0.65)' : 'var(--muted)',
-                          display: '-webkit-box',
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: 'vertical',
-                          overflow: 'hidden',
-                        }}
-                        // Strip markdown for clean preview
-                        dangerouslySetInnerHTML={{ __html: m.replyToContent.replace(/<[^>]*>/g, '').substring(0, 120) }}
-                      />
                     </div>
                   )}
 
-                  {m.imageUrl && (
+                  {/* Image attachment inside block */}
+                  {msg.imageUrl && (
                     <img
-                      src={m.imageUrl}
-                      alt="Attached"
-                      className="w-full max-h-[160px] object-contain rounded-xl mb-2.5"
-                      style={{ background: 'rgba(0,0,0,0.2)' }}
+                      src={msg.imageUrl}
+                      alt="Telemetry Attachment"
+                      className="w-48 max-h-36 object-contain rounded border border-sys-groove bg-zinc-950 mb-2"
                     />
                   )}
-                  <div
-                    className="text-sm leading-relaxed break-words chat-content"
-                    style={{ color: isUser ? 'rgba(255,255,255,0.95)' : 'var(--foreground)' }}
-                    dangerouslySetInnerHTML={{ __html: renderMarkdown(m.content) }}
+
+                  {/* Text Content */}
+                  <div 
+                    className="text-xs text-zinc-300 leading-relaxed break-words chat-content select-text"
+                    dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.content) }}
                   />
-                  <span
-                    className="text-[9px] block mt-1.5 select-none"
-                    style={{ color: isUser ? 'rgba(255,255,255,0.45)' : 'var(--muted)', opacity: 0.7 }}
-                  >
-                    {timeStr}
-                  </span>
                 </div>
 
-                {/* Reply button — right of AI bubble */}
-                {!isUser && replyBtn}
-              </motion.div>
+                {/* Reply control trigger (tactical corner button) */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setReplyingTo({ idx, content: msg.content, role: msg.role });
+                  }}
+                  className="opacity-0 group-hover:opacity-100 absolute top-2 right-2 p-1 rounded bg-zinc-900 border border-sys-groove hover:text-zinc-300 text-zinc-500 cursor-pointer spring-transition"
+                  title="Reply to message"
+                >
+                  <CornerUpLeft size={10} />
+                </button>
+              </div>
             );
           })}
         </AnimatePresence>
 
-        {/* Typing indicator */}
+        {/* Streaming Loader */}
         {isLoading && (
-          <motion.div
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex items-center gap-2.5 justify-start"
-          >
-            <div
-              className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-[10px] font-bold"
-              style={{
-                background: 'linear-gradient(135deg, #6366f1, #06b6d4)',
-                color: 'white',
-              }}
-            >
+          <div className="flex gap-3.5 items-start py-3 px-2">
+            <div className="w-8 h-8 rounded-[4px] bg-zinc-900 border border-sys-groove flex-shrink-0 flex items-center justify-center font-mono font-bold text-xs text-zinc-500">
               V
             </div>
-            <div
-              className="px-4 py-3 rounded-2xl rounded-bl-md"
-              style={{
-                background: 'var(--surface)',
-                border: '1px solid var(--border-color)',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-              }}
-            >
-              <div className="flex gap-1.5 items-center">
+            <div className="flex-1 py-1">
+              <div className="flex gap-1 items-center">
                 {[0, 1, 2].map(i => (
                   <motion.div
                     key={i}
-                    className="w-1.5 h-1.5 rounded-full"
-                    style={{ background: 'var(--primary)' }}
-                    animate={{ y: [0, -5, 0], opacity: [0.5, 1, 0.5] }}
-                    transition={{ duration: 0.7, repeat: Infinity, delay: i * 0.15, ease: 'easeInOut' }}
+                    className="w-1.5 h-1.5 rounded-full bg-purple-500"
+                    animate={{ y: [0, -4, 0], opacity: [0.4, 1, 0.4] }}
+                    transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15 }}
                   />
                 ))}
               </div>
             </div>
-          </motion.div>
+          </div>
         )}
 
         <div ref={messagesEndRef} />
       </div>
 
-      {/* ── Attached File Preview ────────────────────────────── */}
+      {/* ── Attachment Preview ── */}
       <AnimatePresence>
         {attachedFile && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="pb-2"
-          >
-            <div
-              className="relative inline-flex items-center gap-2.5 py-2 pl-2.5 pr-8 rounded-xl"
-              style={{ border: '1px solid var(--border-color)', background: 'var(--surface)' }}
-            >
+          <div className="px-4 py-2 border-t border-sys-groove bg-zinc-950/50 flex items-center justify-between">
+            <div className="flex items-center gap-2">
               {attachedFile.isImage && attachedFile.previewUrl ? (
-                <img
-                  src={attachedFile.previewUrl}
-                  alt="Attached"
-                  className="h-10 w-10 rounded-lg object-cover"
-                />
+                <img src={attachedFile.previewUrl} className="h-8 w-8 rounded object-cover border border-sys-groove" />
               ) : (
-                <div
-                  className="h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                  style={{ background: 'rgba(99, 102, 241, 0.12)', color: 'var(--primary)' }}
-                >
-                  <FileText size={18} />
-                </div>
+                <FileText size={16} className="text-purple-400" />
               )}
-              <div>
-                <p className="text-xs font-semibold truncate max-w-[180px]" style={{ color: 'var(--foreground)' }}>
-                  {attachedFile.file.name}
-                </p>
-                <p className="text-[10px]" style={{ color: 'var(--muted)' }}>
-                  {(attachedFile.file.size / 1024 / 1024).toFixed(2)} MB
-                </p>
-              </div>
-              <button
-                onClick={() => setAttachedFile(null)}
-                className="absolute top-1.5 right-1.5 p-1 rounded-full"
-                style={{ background: 'var(--danger)', color: 'white', border: 'none', cursor: 'pointer' }}
-              >
-                <Trash2 size={9} />
-              </button>
+              <span className="text-[10px] font-mono text-zinc-300 truncate max-w-xs">{attachedFile.file.name}</span>
             </div>
-          </motion.div>
+            <button 
+              onClick={() => setAttachedFile(null)}
+              className="text-xs text-rose-500 hover:text-rose-400 border-none bg-transparent cursor-pointer"
+            >
+              Cancel
+            </button>
+          </div>
         )}
       </AnimatePresence>
 
-      {/* ── Input Area ───────────────────────────────────────── */}
-      <div
-        className="flex flex-col gap-0 pt-2.5"
-        style={{ borderTop: '1px solid var(--border-color)' }}
-      >
-        {/* Reply bar */}
-        <AnimatePresence>
-          {replyingTo && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="flex items-center gap-2 mb-2 px-3 py-2 rounded-xl"
-              style={{
-                background: 'rgba(99,102,241,0.08)',
-                border: '1px solid rgba(99,102,241,0.2)',
-                borderLeft: '3px solid var(--primary)',
-              }}
-            >
-              <CornerUpLeft size={13} style={{ color: 'var(--primary)', flexShrink: 0 }} />
-              <div className="flex-1 min-w-0">
-                <p className="text-[10px] font-bold" style={{ color: 'var(--primary)' }}>
-                  Replying to {replyingTo.role === 'assistant' ? 'VAYU' : userName}
-                </p>
-                <p className="text-[11px] truncate" style={{ color: 'var(--muted)' }}>
-                  {replyingTo.content.replace(/<[^>]*>/g, '').substring(0, 80)}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setReplyingTo(null)}
-                className="p-1 rounded-full flex-shrink-0"
-                style={{ background: 'rgba(255,255,255,0.06)', border: 'none', cursor: 'pointer', color: 'var(--muted)' }}
-                aria-label="Cancel reply"
-              >
-                <X size={13} />
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
+      {/* ── Skeuomorphic Rigid Input Dock (Zone 3A Bottom) ── */}
+      <div className="w-full min-h-[56px] bg-zinc-950/40 border-t border-sys-groove px-4 py-2 flex flex-col justify-center gap-1.5 select-none relative shrink-0">
+        
+        {/* Reply focus bar */}
+        {replyingTo && (
+          <div className="flex items-center justify-between bg-purple-950/20 border border-purple-500/20 px-2 py-1 rounded text-[10px] text-purple-300">
+            <div className="flex items-center gap-1.5 truncate">
+              <CornerUpLeft size={10} />
+              <span>Replying to {replyingTo.role === 'assistant' ? 'VAYU' : userName}:</span>
+              <span className="opacity-60 truncate italic">{replyingTo.content.substring(0, 60)}</span>
+            </div>
+            <button onClick={() => setReplyingTo(null)} className="text-zinc-500 hover:text-zinc-300 border-none bg-transparent cursor-pointer">
+              <X size={10} />
+            </button>
+          </div>
+        )}
 
-        <div className="flex items-end gap-2">
-          {/* Attach button */}
-          <motion.button
-            whileHover={{ scale: 1.08 }}
-            whileTap={{ scale: 0.92 }}
+        <div className="flex items-end gap-2.5">
+          {/* File Clip Trigger */}
+          <button
             onClick={() => fileInputRef.current?.click()}
             disabled={isLoading}
-            className="p-2.5 rounded-xl flex-shrink-0 disabled:opacity-40"
-            style={{
-              background: 'var(--surface)',
-              border: '1px solid var(--border-color)',
-              color: 'var(--muted)',
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-            }}
-            title="Upload Document or Image"
-            aria-label="Attach file"
+            className="h-10 w-10 rounded-[4px] bg-zinc-900 border border-sys-groove hover:bg-zinc-800/40 flex items-center justify-center text-zinc-500 hover:text-zinc-300 cursor-pointer spring-transition active:scale-95 disabled:opacity-30"
+            title="Attach file"
           >
-            <Paperclip size={16} />
-          </motion.button>
-
+            <Paperclip size={14} />
+          </button>
           <input
             ref={fileInputRef}
             type="file"
@@ -532,7 +363,7 @@ export default function ChatPanel({ userUid, userName, onResponseComplete }: Cha
             onChange={handleFileAttach}
           />
 
-          {/* Textarea */}
+          {/* Text Input area */}
           <div className="flex-1 relative">
             <textarea
               ref={textareaRef}
@@ -540,45 +371,27 @@ export default function ChatPanel({ userUid, userName, onResponseComplete }: Cha
               onChange={e => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               disabled={isLoading}
-              placeholder={replyingTo
-                ? `Replying to ${replyingTo.role === 'assistant' ? 'VAYU' : userName}…`
-                : (isLoading ? 'VAYU is analyzing…' : 'Ask VAYU anything…')}
+              placeholder={isLoading ? 'VAYU IS AUDITING MATERIALS...' : 'ASK VAYU ANYTHING...'}
               rows={1}
-              className="input-glass resize-none text-sm disabled:opacity-40"
-              style={{
-                minHeight: '42px',
-                maxHeight: '120px',
-                lineHeight: '1.5',
-                paddingTop: '10px',
-                paddingBottom: '10px',
-              }}
+              className="w-full bg-zinc-900/40 border border-sys-groove p-2 text-xs rounded text-zinc-200 outline-none focus:border-zinc-700 resize-none custom-scrollbar font-sans"
+              style={{ minHeight: '40px', maxHeight: '100px', paddingTop: '10px' }}
             />
           </div>
 
-          {/* Send button */}
-          <motion.button
-            whileHover={{ scale: 1.06 }}
-            whileTap={{ scale: 0.92 }}
+          {/* Send Trigger */}
+          <button
             onClick={handleSend}
             disabled={isLoading || isStreaming || (!input.trim() && !attachedFile)}
-            className="p-2.5 rounded-xl flex-shrink-0 disabled:opacity-30"
-            style={{
-              background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
-              color: 'white',
-              border: 'none',
-              cursor: isLoading || isStreaming ? 'wait' : 'pointer',
-              boxShadow: '0 2px 8px rgba(99, 102, 241, 0.3)',
-              transition: 'all 0.15s ease',
-            }}
-            aria-label="Send message"
+            className="h-10 w-10 rounded-[4px] bg-purple-600 hover:bg-purple-500 text-white flex items-center justify-center cursor-pointer disabled:opacity-30 spring-transition active:scale-95 shrink-0"
+            title="Send query"
           >
-            {isLoading || isStreaming
-              ? <Loader2 size={16} className="animate-spin" />
-              : <Send size={16} />
-            }
-          </motion.button>
+            {isLoading || isStreaming ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <Send size={14} />
+            )}
+          </button>
         </div>
-      </div>
       </div>
     </div>
   );

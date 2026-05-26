@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Swords, Trophy, Loader2, Play, ImagePlus, X, BookOpen, Clock, ChevronDown, ChevronUp } from 'lucide-react';
-import { doc, getDoc, setDoc, collection, getDocs, orderBy, query } from 'firebase/firestore';
+import { Swords, Trophy, Loader2, Play, ImagePlus, X, BookOpen, Clock, AlertCircle } from 'lucide-react';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db, getUserProfile } from '@/lib/firebase';
 import { generateDailyBossChallenge, evaluateBossChallengeAnswer } from '@/lib/gemini';
 import { awardXp } from '@/lib/exp';
@@ -11,35 +11,27 @@ import { useToast } from '@/components/Toast';
 
 interface BossBattlePanelProps {
   userUid: string;
+  battleDifficulty?: 'easy' | 'medium' | 'hard' | 'legendary';
 }
 
-interface BattleRecord {
-  date: string;
-  topic: string;
-  passed: boolean;
-  attempts: number;
-}
-
-export default function BossBattlePanel({ userUid }: BossBattlePanelProps) {
+export default function BossBattlePanel({ 
+  userUid,
+  battleDifficulty = 'medium' 
+}: BossBattlePanelProps) {
   const toast = useToast();
   const [loading, setLoading] = useState(true);
   const [summoning, setSummoning] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
-  const [history, setHistory] = useState<BattleRecord[]>([]);
-  const [historyLoaded, setHistoryLoaded] = useState(false);
   
-  // Setup state (topic + optional image)
   const [setupMode, setSetupMode] = useState(true);
   const [topic, setTopic] = useState('');
   const [attachedImage, setAttachedImage] = useState<string | null>(null);
   const [attachedFileName, setAttachedFileName] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // User profile info
   const [userClass, setUserClass] = useState('');
 
-  // Today's Battle state
+  // Encounter state
   const [challenge, setChallenge] = useState<string | null>(null);
   const [passed, setPassed] = useState<boolean>(false);
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -47,12 +39,11 @@ export default function BossBattlePanel({ userUid }: BossBattlePanelProps) {
   const [attempts, setAttempts] = useState(0);
   const [currentTopic, setCurrentTopic] = useState('');
 
-  const todayKey = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  const todayKey = new Date().toISOString().split('T')[0];
 
   useEffect(() => {
     loadTodayChallenge();
     loadUserProfile();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userUid]);
 
   const loadUserProfile = async () => {
@@ -109,9 +100,11 @@ export default function BossBattlePanel({ userUid }: BossBattlePanelProps) {
       const topicString = topic.trim() || 'Analyze the attached image and generate a challenging question from it';
       const imageBase64 = attachedImage ? attachedImage.split(',')[1] : undefined;
 
-      const newChallenge = await generateDailyBossChallenge(userUid, topicString, userClass, imageBase64);
+      // Append difficulty level
+      const fullTopic = `${topicString} [Difficulty: ${battleDifficulty.toUpperCase()}]`;
+
+      const newChallenge = await generateDailyBossChallenge(userUid, fullTopic, userClass, imageBase64);
       
-      // Save challenge to Firestore
       const docRef = doc(db, 'users', userUid, 'boss_battle', todayKey);
       await setDoc(docRef, {
         challenge: newChallenge,
@@ -126,9 +119,10 @@ export default function BossBattlePanel({ userUid }: BossBattlePanelProps) {
       setPassed(false);
       setFeedback(null);
       setSetupMode(false);
+      toast.success('⚔️ VAYU AI Boss summoned! Engage combat now.');
     } catch (e) {
       console.error(e);
-      toast.error('Failed to summon Boss: ' + (e as Error).message);
+      toast.error('Summon failed: ' + (e as Error).message);
     } finally {
       setSummoning(false);
     }
@@ -145,7 +139,6 @@ export default function BossBattlePanel({ userUid }: BossBattlePanelProps) {
       const newAttempts = attempts + 1;
       setAttempts(newAttempts);
 
-      // Save results
       const docRef = doc(db, 'users', userUid, 'boss_battle', todayKey);
       await setDoc(docRef, {
         passed: res.passed,
@@ -158,12 +151,17 @@ export default function BossBattlePanel({ userUid }: BossBattlePanelProps) {
       setFeedback(res.feedback);
 
       if (res.passed) {
-        await awardXp(userUid, 50);
-        toast.success('🏆 VICTORY! You defeated VAYU’s Boss Battle! +50 XP Awarded!');
+        // XP scaling by difficulty
+        const xpMap = { easy: 10, medium: 25, hard: 50, legendary: 100 };
+        const award = xpMap[battleDifficulty] || 25;
+        await awardXp(userUid, award);
+        toast.success(`🏆 VICTORY! Boss defeated. +${award} XP Awarded!`);
+      } else {
+        toast.error('❌ STRIKE DEFLECTED! Boss shields held. Review feedback and retry.');
       }
     } catch (e) {
       console.error(e);
-      toast.error('Evaluation failed: ' + (e as Error).message);
+      toast.error('Shield evaluation aborted: ' + (e as Error).message);
     } finally {
       setSubmitting(false);
     }
@@ -181,284 +179,171 @@ export default function BossBattlePanel({ userUid }: BossBattlePanelProps) {
     setAttachedFileName('');
   };
 
-  const loadHistory = async () => {
-    if (historyLoaded) return;
-    try {
-      const colRef = collection(db, 'users', userUid, 'boss_battle');
-      const q = query(colRef, orderBy('createdAt', 'desc'));
-      const snap = await getDocs(q);
-      const records: BattleRecord[] = snap.docs
-        .filter(d => d.id !== todayKey) // exclude today
-        .map(d => ({
-          date: d.id,
-          topic: d.data().topic || 'Unknown',
-          passed: d.data().passed || false,
-          attempts: d.data().attempts || 0,
-        }));
-      setHistory(records);
-      setHistoryLoaded(true);
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const handleToggleHistory = () => {
-    if (!historyLoaded) loadHistory();
-    setShowHistory(p => !p);
-  };
-
   return (
-    <div className="h-full flex flex-col items-center justify-center relative overflow-hidden p-4">
-      {/* RPG Glow in background */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] bg-[var(--primary)]/5 rounded-full filter blur-[120px] pointer-events-none z-0" />
-
+    <div className="h-full flex flex-col items-center justify-center relative overflow-hidden p-6">
       {loading ? (
-        <div className="flex flex-col items-center z-10">
-          <Loader2 className="w-10 h-10 text-[var(--primary)] animate-spin mb-2" />
-          <p className="text-xs text-[var(--muted)]">Syncing today&apos;s encounter...</p>
+        <div className="flex flex-col items-center">
+          <Loader2 className="w-8 h-8 text-purple-400 animate-spin mb-2" />
+          <p className="text-xs font-mono text-zinc-500 uppercase">SYNCING COMBAT NODE...</p>
         </div>
       ) : setupMode ? (
-        /* SETUP SCREEN — Choose Topic or Upload Image */
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="max-w-md w-full text-center p-8 rounded-3xl border border-[var(--border-color)] bg-black/30 backdrop-blur-md relative z-10"
-        >
-          <div className="w-16 h-16 rounded-full bg-[var(--primary)]/10 border border-[var(--primary)]/30 flex items-center justify-center mx-auto mb-6">
-            <Swords className="w-8 h-8 text-[var(--primary)] animate-pulse" />
+        /* Setup Combat Screen */
+        <div className="max-w-md w-full text-center p-6 border border-sys-groove bg-zinc-950/20 rounded-[4px] relative">
+          <div className="w-12 h-12 bg-rose-950/20 border border-rose-500/20 flex items-center justify-center mx-auto mb-4 rounded">
+            <Swords className="w-6 h-6 text-rose-500 animate-pulse" />
           </div>
 
-          <h2 className="text-2xl font-bold text-[var(--foreground)] tracking-tight">Daily Boss Battle</h2>
-          <p className="text-xs text-[var(--muted)] mt-2 leading-relaxed max-w-xs mx-auto">
-            Choose a topic or upload a reference image. VAYU will craft a tough challenge for you! ⚔️
+          <h2 className="text-sm font-mono font-bold uppercase tracking-wider text-white">Daily Study Boss Battle</h2>
+          <p className="text-xs text-zinc-500 mt-1 max-w-xs mx-auto leading-normal">
+            Input a concept or provide schematic pages. VAYU will forge an exam-level tactical study encounter.
           </p>
 
-          {userClass && (
-            <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[var(--primary)]/10 text-[var(--primary)] border border-[var(--primary)]/20">
-              <BookOpen size={12} />
-              Class {userClass}
+          <div className="mt-4 flex flex-col gap-3 text-left">
+            <div>
+              <label className="text-[10px] font-mono font-bold tracking-wider text-zinc-500 uppercase block mb-1">Combat Subject / Topic</label>
+              <input
+                type="text"
+                value={topic}
+                onChange={(e) => setTopic(e.target.value)}
+                placeholder="e.g. Krebs Cycle, Photosynthesis, Electromagnetic Induction..."
+                className="w-full bg-zinc-900/60 border border-sys-groove p-2 text-xs rounded text-zinc-200 outline-none focus:border-zinc-700 font-sans"
+              />
             </div>
-          )}
 
-          {/* Topic Input */}
-          <div className="mt-6 text-left">
-            <label className="text-[10px] font-bold text-[var(--muted)] uppercase tracking-wider mb-1.5 block">Topic / Subject</label>
-            <input
-              type="text"
-              value={topic}
-              onChange={(e) => setTopic(e.target.value)}
-              placeholder="e.g., Quadratic Equations, Photosynthesis, Newton's Laws..."
-              className="input-glass w-full text-sm"
-            />
-          </div>
-
-          {/* Image Upload */}
-          <div className="mt-4">
-            <label className="text-[10px] font-bold text-[var(--muted)] uppercase tracking-wider mb-1.5 block text-left">Or Upload Reference Image</label>
-            
-            {attachedImage ? (
-              <div className="relative rounded-2xl overflow-hidden border border-[var(--border-color)]">
-                <img src={attachedImage} alt="Reference" className="w-full max-h-[150px] object-contain bg-black/20" />
+            <div>
+              <label className="text-[10px] font-mono font-bold tracking-wider text-zinc-500 uppercase block mb-1">Visual Reference Schematic</label>
+              {attachedImage ? (
+                <div className="relative rounded border border-sys-groove overflow-hidden bg-black/40">
+                  <img src={attachedImage} alt="Reference" className="w-full max-h-[120px] object-contain" />
+                  <button
+                    onClick={() => { setAttachedImage(null); setAttachedFileName(''); }}
+                    className="absolute top-2 right-2 p-1 bg-zinc-950 border border-sys-groove text-rose-500 rounded"
+                  >
+                    <X size={10} />
+                  </button>
+                  <p className="text-[9px] font-mono text-zinc-500 p-1.5 truncate">{attachedFileName}</p>
+                </div>
+              ) : (
                 <button
-                  onClick={() => { setAttachedImage(null); setAttachedFileName(''); }}
-                  className="absolute top-2 right-2 p-1.5 rounded-full bg-red-500/90 text-white"
-                  style={{ border: 'none', cursor: 'pointer' }}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full p-4 border-2 border-dashed border-sys-groove hover:border-zinc-800 rounded flex flex-col items-center gap-1.5 bg-zinc-900/10 cursor-pointer spring-transition"
                 >
-                  <X size={12} />
+                  <ImagePlus size={18} className="text-zinc-500" />
+                  <span className="text-[10px] text-zinc-500">Attach diagrams or reference pages</span>
                 </button>
-                <p className="text-[10px] text-[var(--muted)] p-2 truncate">{attachedFileName}</p>
-              </div>
-            ) : (
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="w-full p-4 rounded-2xl border-2 border-dashed border-[var(--border-color)] hover:border-[var(--primary)]/40 transition-all flex flex-col items-center gap-2"
-                style={{ background: 'rgba(255,255,255,0.02)', cursor: 'pointer' }}
-              >
-                <ImagePlus size={24} className="text-[var(--muted)]" />
-                <span className="text-xs text-[var(--muted)]">Click to upload a textbook page, diagram, or notes</span>
-              </button>
-            )}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleFileAttach}
-            />
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleFileAttach}
+              />
+            </div>
           </div>
 
           <button
             onClick={handleSummonBoss}
             disabled={summoning || (!topic.trim() && !attachedImage)}
-            className="w-full mt-6 btn-primary py-3 rounded-2xl flex items-center justify-center gap-2 text-sm font-bold shadow-lg disabled:opacity-40"
-            style={{
-              background: 'linear-gradient(135deg, #6c63ff, #ff4d6a)',
-              boxShadow: '0 8px 30px rgba(108, 99, 255, 0.2)'
-            }}
+            className="w-full mt-5 py-2.5 bg-purple-600 hover:bg-purple-500 text-xs font-mono font-bold uppercase text-white rounded-[4px] cursor-pointer spring-transition mechanical-press flex items-center justify-center gap-1.5 disabled:opacity-40"
           >
             {summoning ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Summoning VAYU...
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                SUMMONING ENCOUNTER PROTOCOLS...
               </>
             ) : (
               <>
-                <Play size={16} fill="white" />
-                Summon VAYU Challenge
+                <Swords size={12} />
+                INITIATE DAILY ENCOUNTER
               </>
             )}
           </button>
-
-          {/* Past Battles History */}
-          <div className="mt-5 w-full">
-            <button
-              onClick={handleToggleHistory}
-              className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-colors"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', color: 'var(--muted)', cursor: 'pointer' }}
-            >
-              <span className="flex items-center gap-1.5"><Clock size={12} /> Past Battles</span>
-              {showHistory ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-            </button>
-
-            <AnimatePresence>
-              {showHistory && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="overflow-hidden"
-                >
-                  <div className="mt-2 space-y-1.5 max-h-48 overflow-y-auto">
-                    {!historyLoaded ? (
-                      <div className="flex justify-center py-4"><Loader2 size={16} className="animate-spin text-[var(--muted)]" /></div>
-                    ) : history.length === 0 ? (
-                      <p className="text-center text-xs py-3" style={{ color: 'var(--muted)' }}>No past battles yet</p>
-                    ) : history.map(rec => (
-                      <div key={rec.date} className="flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                        <div className="text-left min-w-0">
-                          <p className="text-[10px] font-semibold truncate" style={{ color: 'var(--foreground)' }}>{rec.topic}</p>
-                          <p className="text-[9px]" style={{ color: 'var(--muted)' }}>{rec.date} · {rec.attempts} attempt{rec.attempts !== 1 ? 's' : ''}</p>
-                        </div>
-                        <span className="ml-2 text-[9px] font-bold px-2 py-0.5 rounded-full flex-shrink-0" style={{
-                          background: rec.passed ? 'rgba(16,185,129,0.12)' : 'rgba(244,63,94,0.12)',
-                          color: rec.passed ? '#10b981' : '#f43f5e',
-                          border: `1px solid ${rec.passed ? 'rgba(16,185,129,0.25)' : 'rgba(244,63,94,0.25)'}`,
-                        }}>
-                          {rec.passed ? '✓ Win' : '✗ Loss'}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </motion.div>
+        </div>
       ) : passed ? (
-        /* VICTORY SCREEN */
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="max-w-md w-full text-center p-8 rounded-3xl border border-green-500/30 bg-green-500/5 backdrop-blur-md relative z-10"
-        >
-          <div className="w-16 h-16 rounded-full bg-green-500/10 border border-green-500/30 flex items-center justify-center mx-auto mb-6">
-            <Trophy className="w-8 h-8 text-green-500" />
+        /* Win screen */
+        <div className="max-w-md w-full text-center p-6 border border-emerald-500/20 bg-emerald-950/5 rounded-[4px] relative">
+          <div className="w-12 h-12 bg-emerald-950/20 border border-emerald-500/20 flex items-center justify-center mx-auto mb-4 rounded shadow-[0_0_8px_rgba(16,185,129,0.1)]">
+            <Trophy className="w-6 h-6 text-emerald-400" />
           </div>
 
-          <h2 className="text-2xl font-bold text-green-400">VICTORY achieved!</h2>
-          <p className="text-xs text-[var(--muted)] mt-2 leading-relaxed">
-            VAYU stands defeated today. You answered perfectly and gained high respect!
+          <h2 className="text-sm font-mono font-bold uppercase tracking-wider text-emerald-400">VICTORY SECURED</h2>
+          <p className="text-xs text-zinc-500 mt-1 max-w-xs mx-auto leading-normal">
+            The study encounter has been completely resolved. VAYU shields depleted.
           </p>
 
-          {currentTopic && (
-            <div className="mt-2 text-[10px] text-[var(--muted)] uppercase tracking-wider font-semibold">
-              Topic: {currentTopic}
-            </div>
-          )}
-
           {feedback && (
-            <div className="mt-4 p-4 rounded-2xl bg-green-500/10 text-green-400 text-xs italic border border-green-500/20 leading-relaxed">
+            <div className="mt-4 p-4 rounded bg-emerald-950/10 border border-emerald-500/20 text-xs text-emerald-400 leading-relaxed italic select-text">
               &ldquo;{feedback}&rdquo;
             </div>
           )}
 
-          <div className="mt-6 flex justify-center gap-4 text-xs font-bold text-green-500 uppercase tracking-widest bg-green-500/10 border border-green-500/20 py-2.5 px-4 rounded-xl">
-            🎉 +50 XP Awarded
+          <div className="mt-5 inline-block bg-emerald-950 border border-emerald-500/20 px-4 py-1.5 rounded font-mono text-[10px] font-bold text-emerald-400 uppercase tracking-widest">
+            {battleDifficulty.toUpperCase()} DEFOCUSED: +50 XP
           </div>
 
           <button
             onClick={handleNewBattle}
-            className="mt-4 text-xs text-[var(--muted)] hover:text-[var(--foreground)] font-bold uppercase tracking-wider transition-colors"
-            style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+            className="block w-full mt-6 text-[10px] font-mono font-bold text-zinc-500 hover:text-zinc-300 uppercase tracking-wider bg-transparent border-none cursor-pointer"
           >
-            ⚔️ Start New Battle
+            ⚔️ Request New Combat Node
           </button>
-        </motion.div>
+        </div>
       ) : (
-        /* CHALLENGE SCREEN */
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="max-w-xl w-full p-6 rounded-3xl border border-[var(--border-color)] bg-black/30 backdrop-blur-md relative z-10 flex flex-col gap-6"
-        >
-          <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-3">
-            <h3 className="text-sm font-bold text-[var(--foreground)] flex items-center gap-2 uppercase tracking-wider">
-              <Swords className="text-red-500 animate-pulse" size={16} />
-              Encountering VAYU
+        /* Active quiz screen */
+        <div className="max-w-xl w-full p-5 border border-sys-groove bg-zinc-950/20 rounded-[4px] relative flex flex-col gap-4">
+          <div className="flex items-center justify-between border-b border-sys-groove/40 pb-2.5">
+            <h3 className="text-xs font-mono font-bold uppercase text-white flex items-center gap-1.5">
+              <Swords className="text-rose-500 animate-pulse" size={14} />
+              ENCOUNTER IN PROGRESS
             </h3>
             <div className="flex items-center gap-2">
-              {currentTopic && (
-                <span className="text-[10px] bg-[var(--primary)]/10 text-[var(--primary)] px-2 py-0.5 rounded-full font-bold uppercase border border-[var(--primary)]/20 max-w-[120px] truncate">
-                  {currentTopic}
-                </span>
-              )}
-              <span className="text-[10px] bg-red-500/10 text-red-500 px-2 py-0.5 rounded-full font-bold uppercase border border-red-500/20">
-                Attempt #{attempts + 1}
+              <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded border border-purple-500/20 bg-purple-950/20 text-purple-400 uppercase">
+                DIFF: {battleDifficulty}
+              </span>
+              <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded border border-rose-500/20 bg-rose-950/20 text-rose-400 uppercase">
+                STRIKE #{attempts + 1}
               </span>
             </div>
           </div>
 
-          <div className="p-5 rounded-2xl bg-red-500/5 border border-red-500/20 text-xs leading-relaxed text-[var(--foreground)] font-semibold whitespace-pre-wrap">
+          <div className="p-4 rounded bg-rose-950/5 border border-rose-500/10 text-xs text-zinc-300 leading-relaxed whitespace-pre-wrap font-sans select-text">
             {challenge}
           </div>
 
-          {feedback && !passed && (
-            <div className="p-4 rounded-2xl bg-red-500/10 text-red-400 text-xs italic border border-red-500/20 leading-relaxed">
-              <strong>VAYU says:</strong> &ldquo;{feedback}&rdquo;
+          {feedback && (
+            <div className="p-3 rounded bg-rose-950/10 border border-rose-500/20 text-[11px] text-rose-400 italic leading-relaxed select-text">
+              <strong>VAYU FEEDBACK:</strong> &ldquo;{feedback}&rdquo;
             </div>
           )}
 
           <form onSubmit={handleSubmitAnswer} className="space-y-4">
             <div>
-              <label className="text-[10px] font-bold text-[var(--muted)] uppercase tracking-wider mb-1 block">Your Solution</label>
+              <label className="text-[9px] font-mono font-bold tracking-wider text-zinc-500 uppercase block mb-1.5">Write Your Explanation</label>
               <textarea
                 required
                 rows={4}
                 value={userAnswer}
                 onChange={(e) => setUserAnswer(e.target.value)}
-                placeholder="Write a clear, conceptual answer to defeat VAYU..."
-                className="w-full input-glass text-xs p-4 resize-none custom-scrollbar"
+                placeholder="Compose a rigorous conceptual formulation to strike..."
+                className="w-full bg-zinc-900/60 border border-sys-groove p-3 text-xs rounded text-zinc-200 outline-none focus:border-zinc-700 resize-none custom-scrollbar font-sans"
               />
             </div>
 
             <button
               type="submit"
               disabled={submitting}
-              className="w-full btn-primary py-3 rounded-2xl flex items-center justify-center gap-2 text-sm font-bold uppercase tracking-wider"
-              style={{
-                background: 'linear-gradient(135deg, #ff4d6a, #6c63ff)'
-              }}
+              className="w-full py-2.5 bg-rose-600 hover:bg-rose-500 text-xs font-mono font-bold uppercase text-white rounded-[4px] cursor-pointer spring-transition mechanical-press flex items-center justify-center gap-1.5 disabled:opacity-40"
             >
               {submitting ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Analyzing response...
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  EVALUATING SCHEMATICS STRIKE...
                 </>
               ) : (
                 <>
-                  <Swords size={16} />
-                  Strike Boss!
+                  <Swords size={12} />
+                  STRIKE COMBAT TARGET
                 </>
               )}
             </button>
@@ -466,12 +351,11 @@ export default function BossBattlePanel({ userUid }: BossBattlePanelProps) {
 
           <button
             onClick={handleNewBattle}
-            className="text-xs text-[var(--muted)] hover:text-[var(--foreground)] font-bold uppercase tracking-wider text-center transition-colors"
-            style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+            className="text-[9px] font-mono font-bold text-zinc-500 hover:text-zinc-300 uppercase tracking-widest text-center mt-2 bg-transparent border-none cursor-pointer"
           >
-            ← Choose Different Topic
+            ← Abort Battle & Reset
           </button>
-        </motion.div>
+        </div>
       )}
     </div>
   );

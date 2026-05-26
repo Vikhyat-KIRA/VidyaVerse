@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Layers, Sparkles, Plus, Trash2, ArrowRight, CheckCircle2, XCircle, BookOpen, Zap } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Layers, Sparkles, Plus, Trash2, ArrowRight, CheckCircle2, XCircle, BookOpen, Zap, MoveRight, HelpCircle } from 'lucide-react';
 import { getFlashcards, addFlashcard, updateFlashcardBox, deleteFlashcard, type Flashcard } from '@/lib/flashcards';
 import { generateFlashcardsFromContext } from '@/lib/gemini';
 import { awardXp } from '@/lib/exp';
@@ -29,7 +29,6 @@ export default function FlashcardsPanel({ userUid }: FlashcardsPanelProps) {
 
   useEffect(() => {
     loadCards();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userUid]);
 
   const loadCards = async () => {
@@ -48,15 +47,12 @@ export default function FlashcardsPanel({ userUid }: FlashcardsPanelProps) {
   const handleForgeWithVayu = async () => {
     setForging(true);
     try {
-      // Fetch cards from Gemini using vault and history
       const generated = await generateFlashcardsFromContext(userUid, "Latest study session analysis request.");
       
-      // Save all to Firestore
       for (const card of generated) {
         await addFlashcard(userUid, card.question, card.answer);
       }
 
-      // Award 20 XP for forging!
       await awardXp(userUid, 20);
       toast.success(`✨ VAYU forged ${generated.length} new flashcards from your memory vault! +20 XP`);
       await loadCards();
@@ -77,6 +73,7 @@ export default function FlashcardsPanel({ userUid }: FlashcardsPanelProps) {
       setNewQuestion('');
       setNewAnswer('');
       setShowAddModal(false);
+      toast.success('Flashcard created successfully!');
       await loadCards();
     } catch (e) {
       console.error(e);
@@ -87,6 +84,7 @@ export default function FlashcardsPanel({ userUid }: FlashcardsPanelProps) {
     if (!id) return;
     if (window.confirm('Delete this card forever?')) {
       await deleteFlashcard(userUid, id);
+      toast.success('Card removed from rotation');
       await loadCards();
     }
   };
@@ -99,7 +97,7 @@ export default function FlashcardsPanel({ userUid }: FlashcardsPanelProps) {
 
     if (gotRight) {
       setSessionsStats(prev => ({ ...prev, correct: prev.correct + 1 }));
-      await awardXp(userUid, 5); // +5 XP for correct answer!
+      await awardXp(userUid, 5);
     } else {
       setSessionsStats(prev => ({ ...prev, wrong: prev.wrong + 1 }));
     }
@@ -109,10 +107,9 @@ export default function FlashcardsPanel({ userUid }: FlashcardsPanelProps) {
       if (currentCardIndex + 1 < cards.length) {
         setCurrentCardIndex(prev => prev + 1);
       } else {
-        // finished session!
         const correct = sessionsStats.correct + (gotRight ? 1 : 0);
         const wrong = sessionsStats.wrong + (!gotRight ? 1 : 0);
-        toast.success(`🎓 Session Complete! ✅ ${correct} correct, ❌ ${wrong} wrong`);
+        toast.success(`🎓 Leitner run complete! ✅ ${correct} correct, ❌ ${wrong} wrong`);
         setStudying(false);
         setCurrentCardIndex(0);
         setSessionsStats({ correct: 0, wrong: 0 });
@@ -121,24 +118,54 @@ export default function FlashcardsPanel({ userUid }: FlashcardsPanelProps) {
     }, 200);
   };
 
+  // Drag simulation / button controls to shift boxes
+  const handleShiftBox = async (cardId: string, currentBox: number, direction: 'up' | 'down') => {
+    let nextBox = currentBox;
+    if (direction === 'up' && currentBox < 5) nextBox = currentBox + 1;
+    if (direction === 'down' && currentBox > 1) nextBox = currentBox - 1;
+    
+    if (nextBox === currentBox) return;
+
+    try {
+      await updateFlashcardBox(userUid, cardId, direction === 'up', currentBox);
+      toast.success(`Card shifted to Box ${nextBox}`);
+      await loadCards();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  // Group cards by box
+  const getCardsInBox = (boxNum: number) => {
+    return cards.filter(c => (c.box || 1) === boxNum);
+  };
+
+  const boxLabels = [
+    { num: 1, title: 'BOX 1', subtitle: 'Everyday' },
+    { num: 2, title: 'BOX 2', subtitle: '3 Days' },
+    { num: 3, title: 'BOX 3', subtitle: 'Weekly' },
+    { num: 4, title: 'BOX 4', subtitle: '2 Weeks' },
+    { num: 5, title: 'BOX 5', subtitle: 'Monthly' }
+  ];
+
   return (
-    <div className="h-full flex flex-col relative overflow-hidden">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[var(--border-color)] pb-4 mb-6">
+    <div className="h-full flex flex-col relative overflow-hidden p-4">
+      {/* 1. Header Toolbar */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-sys-groove pb-4 mb-4">
         <div>
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            <Layers className="text-[var(--primary)]" />
-            Flash-Forge Vault
+          <h2 className="text-lg font-bold text-white flex items-center gap-2">
+            <Layers className="text-purple-400" />
+            Leitner System Spaced Repetition Vault
           </h2>
-          <p className="text-xs text-[var(--muted)]">
-            Spaced Repetition Flashcards powered by VAYU. Master concepts with Leitner System.
+          <p className="text-xs text-zinc-500">
+            Tactical Kanban. Promote cards by answering correctly; mistakes demote them to Box 1.
           </p>
         </div>
 
         <div className="flex gap-2">
           <button
             onClick={() => setShowAddModal(true)}
-            className="btn-ghost text-xs flex items-center gap-1.5 py-2"
+            className="px-3 py-1.5 bg-zinc-900 border border-sys-groove hover:bg-zinc-800/40 text-xs font-bold text-zinc-300 rounded-[4px] flex items-center gap-1.5 cursor-pointer spring-transition mechanical-press"
           >
             <Plus size={14} /> Add Card
           </button>
@@ -146,14 +173,11 @@ export default function FlashcardsPanel({ userUid }: FlashcardsPanelProps) {
           <button
             onClick={handleForgeWithVayu}
             disabled={forging}
-            className="btn-primary text-xs flex items-center gap-1.5 py-2"
-            style={{
-              background: 'linear-gradient(135deg, #6c63ff, #00f0ff)'
-            }}
+            className="px-3 py-1.5 bg-purple-900/20 border border-purple-500/30 hover:bg-purple-900/30 text-xs font-bold text-purple-400 rounded-[4px] flex items-center gap-1.5 cursor-pointer spring-transition mechanical-press"
           >
             {forging ? (
               <>
-                <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <div className="w-3.5 h-3.5 border-2 border-purple-400/30 border-t-purple-400 rounded-full animate-spin" />
                 Forging...
               </>
             ) : (
@@ -163,20 +187,29 @@ export default function FlashcardsPanel({ userUid }: FlashcardsPanelProps) {
               </>
             )}
           </button>
+
+          {cards.length > 0 && !studying && (
+            <button
+              onClick={() => setStudying(true)}
+              className="px-4 py-1.5 bg-purple-600 hover:bg-purple-500 text-xs font-bold text-white rounded-[4px] flex items-center gap-1.5 cursor-pointer spring-transition mechanical-press"
+            >
+              🚀 Start Session
+            </button>
+          )}
         </div>
       </div>
 
       {loading ? (
         <div className="flex-1 flex flex-col items-center justify-center">
-          <div className="w-10 h-10 border-4 border-[var(--primary)]/20 border-t-[var(--primary)] rounded-full animate-spin mb-2" />
-          <p className="text-xs text-[var(--muted)]">Retrieving flashcards...</p>
+          <div className="w-8 h-8 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin mb-2" />
+          <p className="text-xs text-zinc-500">Securing deck cards...</p>
         </div>
       ) : studying ? (
         /* STUDY INTERFACE */
         <div className="flex-1 flex flex-col items-center justify-center max-w-lg mx-auto w-full">
-          <div className="w-full mb-4 flex justify-between items-center text-xs text-[var(--muted)] font-semibold">
+          <div className="w-full mb-4 flex justify-between items-center text-[10px] font-mono text-zinc-500 uppercase tracking-wider">
             <span>Card {currentCardIndex + 1} of {cards.length}</span>
-            <span className="px-2.5 py-0.5 bg-[var(--surface)] border border-[var(--border-color)] rounded-full text-[var(--primary)] font-bold">
+            <span className="px-2 py-0.5 bg-purple-950/30 border border-purple-500/20 rounded text-purple-400 font-bold">
               Box {cards[currentCardIndex].box || 1}
             </span>
           </div>
@@ -184,233 +217,203 @@ export default function FlashcardsPanel({ userUid }: FlashcardsPanelProps) {
           {/* Flashcard Component */}
           <div 
             onClick={() => setIsFlipped(!isFlipped)}
-            className="w-full aspect-[1.6] rounded-3xl cursor-pointer perspective-1000 relative select-none"
+            className="w-full aspect-[1.7] rounded-[4px] cursor-pointer relative select-none bg-zinc-900 border border-sys-groove p-6 flex flex-col justify-between chamfered-edge"
           >
-            <motion.div
-              animate={{ rotateY: isFlipped ? 180 : 0 }}
-              transition={{ duration: 0.4 }}
-              className="w-full h-full preserve-3d relative rounded-3xl"
-              style={{
-                boxShadow: '0 8px 32px rgba(108, 99, 255, 0.08)'
-              }}
-            >
-              {/* Front side */}
-              <div 
-                className="absolute inset-0 backface-hidden rounded-3xl p-8 flex flex-col justify-between border border-[var(--border-color)]"
-                style={{ background: 'rgba(255, 255, 255, 0.02)' }}
-              >
-                <div className="text-[var(--primary)] font-bold text-xs uppercase tracking-wider">Question</div>
-                <div className="text-lg md:text-xl font-bold text-center text-[var(--foreground)] my-auto max-h-[80%] overflow-y-auto custom-scrollbar">
-                  {cards[currentCardIndex].question}
-                </div>
-                <div className="text-center text-[10px] text-[var(--muted)] uppercase tracking-widest font-semibold animate-pulse">
-                  Click to reveal answer
-                </div>
-              </div>
+            <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest border-b border-sys-groove/40 pb-2 flex justify-between">
+              <span>{isFlipped ? "VAYU's Answer Key" : 'Question'}</span>
+              <span>TAP TO FLIP</span>
+            </div>
+            
+            <div className="flex-1 flex items-center justify-center py-4">
+              <p className="text-sm md:text-base font-bold text-center text-zinc-100 max-h-36 overflow-y-auto leading-relaxed select-text">
+                {isFlipped ? cards[currentCardIndex].answer : cards[currentCardIndex].question}
+              </p>
+            </div>
 
-              {/* Back side */}
-              <div 
-                className="absolute inset-0 backface-hidden rounded-3xl p-8 flex flex-col justify-between border border-[var(--primary)] rotate-y-180"
-                style={{ background: 'rgba(108, 99, 255, 0.03)' }}
-              >
-                <div className="text-[#34d399] font-bold text-xs uppercase tracking-wider">VAYU&apos;s Answer Key</div>
-                <div className="text-sm md:text-base leading-relaxed text-center text-[var(--foreground)] my-auto max-h-[85%] overflow-y-auto custom-scrollbar">
-                  {cards[currentCardIndex].answer}
-                </div>
-                <div className="text-center text-[10px] text-[var(--muted)] uppercase tracking-widest font-semibold">
-                  Click to see question
-                </div>
-              </div>
-            </motion.div>
+            <div className="text-center text-[9px] font-mono text-zinc-600 tracking-wider">
+              {isFlipped ? 'COMPARE WITH YOUR MENTAL RECALL' : 'RECALL THE CONCEPT BEFORE FLIPPING'}
+            </div>
           </div>
 
           {/* Action buttons */}
-          <div className="mt-8 flex gap-4 w-full">
+          <div className="mt-6 flex gap-3 w-full">
             <button
               onClick={() => handleStudyAnswer(false)}
-              className="flex-1 flex items-center justify-center gap-2 p-3 rounded-2xl bg-red-500/10 text-red-500 border border-red-500/20 font-bold text-sm hover:bg-red-500/20 transition-all"
+              className="flex-1 flex items-center justify-center gap-2 p-2.5 rounded-[4px] bg-rose-950/10 text-rose-400 border border-rose-500/20 font-mono font-bold text-xs uppercase hover:bg-rose-950/20 cursor-pointer spring-transition mechanical-press"
             >
-              <XCircle size={16} /> Got it Wrong
+              <XCircle size={14} /> Got it Wrong
             </button>
             <button
               onClick={() => handleStudyAnswer(true)}
-              className="flex-1 flex items-center justify-center gap-2 p-3 rounded-2xl bg-green-500/10 text-green-500 border border-green-500/20 font-bold text-sm hover:bg-green-500/20 transition-all"
+              className="flex-1 flex items-center justify-center gap-2 p-2.5 rounded-[4px] bg-emerald-950/10 text-emerald-400 border border-emerald-500/20 font-mono font-bold text-xs uppercase hover:bg-emerald-950/20 cursor-pointer spring-transition mechanical-press"
             >
-              <CheckCircle2 size={16} /> Got it Right (+5 XP)
+              <CheckCircle2 size={14} /> Got it Right (+5 XP)
             </button>
           </div>
 
           <button
             onClick={() => setStudying(false)}
-            className="mt-6 text-xs text-[var(--muted)] hover:text-[var(--foreground)] font-bold uppercase tracking-wider"
+            className="mt-6 text-[10px] font-mono font-bold text-zinc-500 hover:text-zinc-300 uppercase tracking-widest border-none bg-transparent cursor-pointer"
           >
             Quit Studying
           </button>
         </div>
       ) : cards.length === 0 ? (
         /* EMPTY STATE */
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="flex-1 flex flex-col items-center justify-center text-center px-6"
-        >
-          {/* Illustrated icon cluster */}
-          <div className="relative mb-6">
-            <div className="w-20 h-20 rounded-3xl flex items-center justify-center mx-auto" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.12), rgba(6,182,212,0.08))', border: '1px solid rgba(99,102,241,0.15)' }}>
-              <Layers size={36} style={{ color: 'var(--primary)', opacity: 0.8 }} />
-            </div>
-            <motion.div
-              animate={{ y: [-3, 3, -3] }}
-              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-              className="absolute -top-2 -right-2 w-8 h-8 rounded-xl flex items-center justify-center"
-              style={{ background: 'rgba(251,146,60,0.12)', border: '1px solid rgba(251,146,60,0.2)' }}
-            >
-              <Zap size={14} style={{ color: '#fb923c' }} />
-            </motion.div>
-            <motion.div
-              animate={{ y: [3, -3, 3] }}
-              transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
-              className="absolute -bottom-2 -left-2 w-8 h-8 rounded-xl flex items-center justify-center"
-              style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.2)' }}
-            >
-              <BookOpen size={14} style={{ color: '#10b981' }} />
-            </motion.div>
+        <div className="flex-1 flex flex-col items-center justify-center text-center px-4">
+          <div className="w-14 h-14 bg-zinc-900 border border-sys-groove rounded flex items-center justify-center mb-4">
+            <Layers size={24} className="text-purple-400" />
           </div>
-
-          <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--foreground)' }}>Your vault is empty</h3>
-          <p className="text-xs leading-relaxed max-w-xs mb-6" style={{ color: 'var(--muted)' }}>
-            Chat with VAYU or upload diagrams in Flash-Forge, then forge personalized spaced repetition cards automatically — or add your own.
+          <h3 className="text-sm font-bold text-zinc-200">Flashcard Vault Empty</h3>
+          <p className="text-xs text-zinc-500 max-w-xs mt-1.5 mb-6">
+            Forge spaced repetition decks automatically via VAYU Chat, or use textbook uploads in Flash-Forge.
           </p>
-
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex gap-2">
             <button
               onClick={handleForgeWithVayu}
               disabled={forging}
-              className="btn-primary flex items-center gap-2 text-sm"
+              className="px-3.5 py-2 bg-purple-600 hover:bg-purple-500 text-xs font-bold text-white rounded-[4px] flex items-center gap-1.5 cursor-pointer spring-transition mechanical-press"
             >
-              <Sparkles size={14} />
-              {forging ? 'Forging...' : 'Forge with VAYU'}
+              <Sparkles size={13} /> Forge with VAYU
             </button>
             <button
               onClick={() => setShowAddModal(true)}
-              className="btn-ghost flex items-center gap-2 text-sm"
+              className="px-3.5 py-2 bg-zinc-900 border border-sys-groove hover:bg-zinc-800 text-xs font-bold text-zinc-300 rounded-[4px] flex items-center gap-1.5 cursor-pointer spring-transition mechanical-press"
             >
-              <Plus size={14} />
-              Add Manually
+              <Plus size={13} /> Add Manually
             </button>
           </div>
-        </motion.div>
+        </div>
       ) : (
-        /* CARD MANAGEMENT / START DECK OVERVIEW */
-        <div className="flex-1 flex flex-col gap-6 overflow-hidden">
-          {/* Deck Summary Widget */}
-          <div 
-            className="p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-4 border border-[var(--border-color)]"
-            style={{ background: 'rgba(255, 255, 255, 0.01)' }}
-          >
-            <div>
-              <h3 className="font-bold text-base text-[var(--foreground)] flex items-center gap-1.5">
-                📦 Study Deck
-              </h3>
-              <p className="text-xs text-[var(--muted)] mt-0.5">
-                You have {cards.length} cards in active rotation.
-              </p>
-            </div>
-
-            <button
-              onClick={() => setStudying(true)}
-              className="btn-primary text-xs px-6 py-2.5 flex items-center gap-2"
-            >
-              🚀 Start Study Session
-              <ArrowRight size={14} />
-            </button>
-          </div>
-
-          {/* Grid Layout of Cards */}
-          <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {cards.map((card) => (
-                <div
-                  key={card.id}
-                  className="p-5 rounded-2xl border border-[var(--border-color)] flex flex-col justify-between relative group hover:border-[var(--primary)]/40 transition-colors"
-                  style={{ background: 'rgba(255,255,255,0.01)' }}
-                >
-                  <div>
-                    <div className="flex justify-between items-start gap-2 mb-3">
-                      <span className="text-[10px] bg-[var(--primary)]/10 text-[var(--primary)] border border-[var(--primary)]/20 px-2 py-0.5 rounded-full font-bold uppercase">
-                        Box {card.box || 1}
-                      </span>
-                      <button
-                        onClick={() => handleDelete(card.id)}
-                        className="text-[var(--muted)] hover:text-red-500 transition-colors p-1"
-                      >
-                        <Trash2 size={13} />
-                      </button>
-                    </div>
-
-                    <h4 className="font-bold text-sm text-[var(--foreground)] line-clamp-2">{card.question}</h4>
-                    <p className="text-xs text-[var(--muted)] mt-2 line-clamp-3 leading-relaxed">{card.answer}</p>
+        /* LEITNER KANBAN GRID */
+        <div className="flex-1 overflow-x-auto overflow-y-hidden flex gap-3 h-full pb-2 select-none no-scrollbar">
+          {boxLabels.map((box) => {
+            const boxCards = getCardsInBox(box.num);
+            return (
+              <div 
+                key={box.num} 
+                className="w-64 bg-zinc-950/20 border border-sys-groove rounded-[4px] flex flex-col h-full shrink-0 overflow-hidden"
+              >
+                {/* Column Header */}
+                <div className="p-3 bg-zinc-950/40 border-b border-sys-groove flex items-center justify-between">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-mono font-bold tracking-wider text-zinc-300 uppercase">{box.title}</span>
+                    <span className="text-[9px] font-mono text-zinc-500 uppercase mt-0.5">{box.subtitle}</span>
                   </div>
+                  <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-zinc-900 text-zinc-400 border border-sys-groove">
+                    {boxCards.length}
+                  </span>
                 </div>
-              ))}
-            </div>
-          </div>
+
+                {/* Cards Container */}
+                <div className="flex-1 p-2 overflow-y-auto space-y-2 custom-scrollbar bg-black/10">
+                  {boxCards.length === 0 ? (
+                    <div className="h-full flex items-center justify-center text-center opacity-30 p-4 border border-dashed border-sys-groove/40 rounded-[2px]">
+                      <span className="text-[9px] font-mono text-zinc-500 uppercase">COLUMN EMPTY</span>
+                    </div>
+                  ) : (
+                    boxCards.map((card) => (
+                      <div
+                        key={card.id}
+                        className="p-3 bg-zinc-900 border border-sys-groove rounded-[4px] flex flex-col justify-between hover:border-zinc-700 spring-transition hover:shadow-[0_4px_12px_rgba(0,0,0,0.5)] group relative"
+                      >
+                        <div className="flex items-start justify-between gap-1.5">
+                          <p className="text-xs font-bold text-zinc-200 line-clamp-2 pr-4">{card.question}</p>
+                          <button
+                            onClick={() => handleDelete(card.id)}
+                            className="opacity-0 group-hover:opacity-100 text-zinc-500 hover:text-red-400 p-0.5 absolute top-2.5 right-2.5 border-none bg-transparent cursor-pointer spring-transition"
+                            title="Delete Card"
+                          >
+                            <Trash2 size={11} />
+                          </button>
+                        </div>
+                        <p className="text-[10px] text-zinc-500 mt-1.5 line-clamp-2 leading-normal">{card.answer}</p>
+                        
+                        {/* Shifter utility arrows */}
+                        <div className="flex justify-between items-center mt-3 pt-2 border-t border-sys-groove/40">
+                          <span className="text-[9px] font-mono text-zinc-600">ID: {card.id?.substring(0, 4)}</span>
+                          <div className="flex gap-1">
+                            {box.num > 1 && (
+                              <button 
+                                onClick={() => handleShiftBox(card.id!, box.num, 'down')}
+                                className="px-1 py-0.5 rounded bg-zinc-950 border border-sys-groove text-zinc-500 hover:text-zinc-300 text-[8px] font-mono cursor-pointer"
+                                title="Demote Box"
+                              >
+                                ◀
+                              </button>
+                            )}
+                            {box.num < 5 && (
+                              <button 
+                                onClick={() => handleShiftBox(card.id!, box.num, 'up')}
+                                className="px-1 py-0.5 rounded bg-zinc-950 border border-sys-groove text-zinc-500 hover:text-zinc-300 text-[8px] font-mono cursor-pointer"
+                                title="Promote Box"
+                              >
+                                ▶
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
       {/* ADD CARD MODAL */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
           <motion.form
             onSubmit={handleManualAdd}
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="max-w-md w-full p-6 rounded-2xl glass-card border border-[var(--border-color)]"
-            style={{ background: 'var(--background)' }}
+            className="max-w-md w-full p-5 rounded-[4px] border border-sys-groove bg-zinc-950/95 shadow-2xl relative"
           >
-            <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-              <Plus className="text-[var(--primary)]" />
+            <h3 className="text-sm font-mono font-bold uppercase tracking-wider text-white mb-4 pb-2 border-b border-sys-groove flex items-center gap-1.5">
+              <Plus className="text-purple-400" size={14} />
               Add Manual Flashcard
             </h3>
 
             <div className="space-y-4">
               <div>
-                <label className="text-xs font-semibold text-[var(--muted)] block mb-1">Question</label>
+                <label className="text-[10px] font-mono font-bold tracking-wider text-zinc-500 uppercase block mb-1">Question</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. What is the capital of France?"
+                  placeholder="e.g., What is cellular mitochondria?"
                   value={newQuestion}
                   onChange={(e) => setNewQuestion(e.target.value)}
-                  className="input-glass w-full text-sm"
+                  className="w-full bg-zinc-900/60 border border-sys-groove p-2 text-xs rounded text-zinc-200 outline-none focus:border-zinc-700"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-[var(--muted)] block mb-1">Answer</label>
+                <label className="text-[10px] font-mono font-bold tracking-wider text-zinc-500 uppercase block mb-1">Answer Key</label>
                 <textarea
                   required
                   rows={3}
-                  placeholder="e.g. Paris"
+                  placeholder="e.g., Powerhouse of the cell..."
                   value={newAnswer}
                   onChange={(e) => setNewAnswer(e.target.value)}
-                  className="input-glass w-full text-sm resize-none custom-scrollbar"
+                  className="w-full bg-zinc-900/60 border border-sys-groove p-2 text-xs rounded text-zinc-200 outline-none focus:border-zinc-700 resize-none custom-scrollbar"
                 />
               </div>
             </div>
 
-            <div className="mt-6 flex justify-end gap-3">
+            <div className="mt-6 flex justify-end gap-2.5">
               <button
                 type="button"
                 onClick={() => setShowAddModal(false)}
-                className="btn-ghost text-xs px-4 py-2"
+                className="px-3.5 py-1.5 bg-zinc-900 border border-sys-groove text-xs font-bold text-zinc-400 rounded-[4px] hover:text-zinc-300 cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="btn-primary text-xs px-4 py-2"
+                className="px-4 py-1.5 bg-purple-600 hover:bg-purple-500 text-xs font-bold text-white rounded-[4px] cursor-pointer spring-transition mechanical-press"
               >
                 Create Card
               </button>

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import HulyClock from './HulyClock';
 import { motion } from 'framer-motion';
 import {
   Sparkles, MessageCircle, Users, Zap, Timer, Image, Trophy,
@@ -966,14 +965,14 @@ export default function LandingPage({ onEnterApp }: LandingPageProps) {
       <section className="relative z-10 py-16 md:py-24 px-4">
         <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center text-center md:text-left">
           
-          {/* Left Column: Premium Circular Clock Widget */}
+          {/* Left Column: Premium Circular VayuOrb AI Brand Mark */}
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
             className="flex justify-center md:justify-end"
           >
-            <HulyClock />
+            <VayuOrb size="lg" isThinking={true} />
           </motion.div>
 
           {/* Right Column: Title text & Start actions */}

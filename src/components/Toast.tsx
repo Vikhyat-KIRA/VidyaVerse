@@ -4,8 +4,6 @@ import { createContext, useContext, useState, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, XCircle, Info, X } from 'lucide-react';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 type ToastVariant = 'success' | 'error' | 'info';
 
 interface Toast {
@@ -21,8 +19,6 @@ interface ToastContextValue {
   info: (message: string) => void;
 }
 
-// ─── Context ──────────────────────────────────────────────────────────────────
-
 const ToastContext = createContext<ToastContextValue | null>(null);
 
 export function useToast(): ToastContextValue {
@@ -31,26 +27,24 @@ export function useToast(): ToastContextValue {
   return ctx;
 }
 
-// ─── Provider ─────────────────────────────────────────────────────────────────
-
 const VARIANT_CONFIG = {
   success: {
-    icon: <CheckCircle2 size={15} />,
+    icon: <CheckCircle2 size={13} />,
     color: '#10b981',
-    bg: 'rgba(16, 185, 129, 0.12)',
-    border: 'rgba(16, 185, 129, 0.25)',
+    bg: 'rgba(16, 185, 129, 0.05)',
+    border: 'rgba(16, 185, 129, 0.2)',
   },
   error: {
-    icon: <XCircle size={15} />,
+    icon: <XCircle size={13} />,
     color: '#f43f5e',
-    bg: 'rgba(244, 63, 94, 0.12)',
-    border: 'rgba(244, 63, 94, 0.25)',
+    bg: 'rgba(244, 63, 94, 0.05)',
+    border: 'rgba(244, 63, 94, 0.2)',
   },
   info: {
-    icon: <Info size={15} />,
-    color: '#6366f1',
-    bg: 'rgba(99, 102, 241, 0.12)',
-    border: 'rgba(99, 102, 241, 0.25)',
+    icon: <Info size={13} />,
+    color: '#8b5cf6',
+    bg: 'rgba(139, 92, 246, 0.05)',
+    border: 'rgba(139, 92, 246, 0.2)',
   },
 };
 
@@ -69,7 +63,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
   const show = useCallback((message: string, variant: ToastVariant = 'info') => {
     const id = Math.random().toString(36).slice(2);
-    setToasts(prev => [...prev.slice(-3), { id, message, variant }]); // max 4 toasts
+    setToasts(prev => [...prev.slice(-2), { id, message, variant }]); // max 3 toasts
     const timer = setTimeout(() => dismiss(id), 3500);
     timerMap.current.set(id, timer);
   }, [dismiss]);
@@ -87,8 +81,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
       {/* Toast container */}
       <div
-        className="fixed top-4 right-4 z-[99999] flex flex-col gap-2 pointer-events-none"
-        style={{ maxWidth: 340 }}
+        className="fixed bottom-4 right-4 z-[99999] flex flex-col gap-2 pointer-events-none"
+        style={{ maxWidth: 300 }}
       >
         <AnimatePresence initial={false}>
           {toasts.map((toast) => {
@@ -96,30 +90,27 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             return (
               <motion.div
                 key={toast.id}
-                initial={{ opacity: 0, x: 40, scale: 0.94 }}
-                animate={{ opacity: 1, x: 0, scale: 1 }}
-                exit={{ opacity: 0, x: 40, scale: 0.94 }}
+                initial={{ opacity: 0, y: 20, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 20, scale: 0.96 }}
                 transition={{ type: 'spring', stiffness: 500, damping: 40 }}
-                className="flex items-start gap-2.5 px-3.5 py-3 rounded-xl pointer-events-auto"
+                className="flex items-start gap-2.5 px-3 py-2.5 rounded-[4px] pointer-events-auto border font-mono select-none"
                 style={{
-                  background: cfg.bg,
-                  border: `1px solid ${cfg.border}`,
-                  backdropFilter: 'blur(20px)',
-                  WebkitBackdropFilter: 'blur(20px)',
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
-                  color: 'var(--foreground)',
+                  background: 'rgba(12, 12, 14, 0.95)',
+                  borderColor: cfg.border,
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+                  color: '#e4e4e7',
                 }}
               >
-                <span style={{ color: cfg.color, flexShrink: 0, marginTop: 1 }}>
+                <span style={{ color: cfg.color, flexShrink: 0, marginTop: 1.5 }}>
                   {cfg.icon}
                 </span>
-                <p className="text-xs font-medium leading-relaxed flex-1">{toast.message}</p>
+                <p className="text-[10px] leading-relaxed flex-1 font-bold">{toast.message.toUpperCase()}</p>
                 <button
                   onClick={() => dismiss(toast.id)}
-                  className="ml-1 opacity-50 hover:opacity-100 transition-opacity flex-shrink-0"
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', padding: 0 }}
+                  className="ml-1 opacity-40 hover:opacity-100 transition-opacity flex-shrink-0 border-none bg-transparent cursor-pointer text-zinc-400"
                 >
-                  <X size={13} />
+                  <X size={11} />
                 </button>
               </motion.div>
             );
