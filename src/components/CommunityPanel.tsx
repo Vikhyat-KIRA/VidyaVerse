@@ -933,6 +933,15 @@ const ChatInput = memo(({
   setReplyingTo: (r: null) => void;
 }) => {
   const [messageInput, setMessageInput] = useState('');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-resize textarea
+  useEffect(() => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    ta.style.height = 'auto';
+    ta.style.height = Math.min(ta.scrollHeight, 120) + 'px';
+  }, [messageInput]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -942,6 +951,10 @@ const ChatInput = memo(({
     const replySnapshot = replyingTo ? { ...replyingTo } : null;
     setMessageInput('');
     setReplyingTo(null);
+
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+    }
 
     await sendMessage(
       activeRoom.id,
@@ -956,6 +969,15 @@ const ChatInput = memo(({
           }
         : undefined
     );
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      // Form submit trigger
+      const mockEvent = { preventDefault: () => {} } as React.FormEvent;
+      handleSendMessage(mockEvent);
+    }
   };
 
   const getRoomDisplayName = (room: Room) => {
@@ -1010,18 +1032,27 @@ const ChatInput = memo(({
           </motion.div>
         )}
       </AnimatePresence>
-      <div className="relative flex items-center">
-        <input
-          type="text"
+      <div className="relative flex items-end">
+        <textarea
+          ref={textareaRef}
           value={messageInput}
           onChange={(e) => setMessageInput(e.target.value)}
+          onKeyDown={handleKeyDown}
           placeholder={replyingTo ? `Replying to ${replyingTo.senderName}…` : `Message ${getRoomDisplayName(activeRoom)}...`}
-          className="input-glass w-full pr-12"
+          rows={1}
+          className="input-glass w-full pr-12 resize-none text-sm"
+          style={{
+            minHeight: '42px',
+            maxHeight: '120px',
+            lineHeight: '1.5',
+            paddingTop: '10px',
+            paddingBottom: '10px',
+          }}
         />
         <button
           type="submit"
           disabled={!messageInput.trim()}
-          className="absolute right-2 p-2 rounded-lg transition-colors"
+          className="absolute right-2 bottom-1.5 p-2 rounded-lg transition-colors"
           style={{
             color: messageInput.trim() ? 'white' : 'var(--muted)',
             background: messageInput.trim() ? 'var(--primary)' : 'transparent'
