@@ -83,6 +83,14 @@ export default function LandingPage({ onEnterApp }: LandingPageProps) {
   const [customizerOpen, setCustomizerOpen] = useState(false);
   const [scrollY, setScrollY] = useState(0);
 
+  const handleMouseMove = (e: React.MouseEvent<HTMLElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    e.currentTarget.style.setProperty('--mouse-x', `${x}px`);
+    e.currentTarget.style.setProperty('--mouse-y', `${y}px`);
+  };
+
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -264,6 +272,7 @@ export default function LandingPage({ onEnterApp }: LandingPageProps) {
             <motion.button
               whileTap={{ scale: 0.96 }}
               onClick={onEnterApp}
+              onMouseMove={handleMouseMove}
               className="btn-radiant-glow text-sm py-3 px-8 flex items-center gap-2"
             >
               <Sparkles size={15} />
@@ -352,6 +361,7 @@ export default function LandingPage({ onEnterApp }: LandingPageProps) {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               whileHover={{ y: -4 }}
+              onMouseMove={handleMouseMove}
               className="glass-card huly-card-glow p-6 md:col-span-2 flex flex-col justify-between overflow-hidden relative group cursor-default min-h-[240px]"
             >
               {/* Default Mockup View */}
@@ -415,6 +425,7 @@ export default function LandingPage({ onEnterApp }: LandingPageProps) {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               whileHover={{ y: -4 }}
+              onMouseMove={handleMouseMove}
               className="glass-card huly-card-glow p-6 flex flex-col justify-between overflow-hidden relative group cursor-default min-h-[240px]"
             >
               {/* Default Mockup View */}
@@ -478,6 +489,7 @@ export default function LandingPage({ onEnterApp }: LandingPageProps) {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               whileHover={{ y: -4 }}
+              onMouseMove={handleMouseMove}
               className="glass-card huly-card-glow p-6 flex flex-col justify-between overflow-hidden relative group cursor-default min-h-[240px]"
             >
               {/* Default Mockup View */}
@@ -536,6 +548,7 @@ export default function LandingPage({ onEnterApp }: LandingPageProps) {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               whileHover={{ y: -4 }}
+              onMouseMove={handleMouseMove}
               className="glass-card huly-card-glow p-6 flex flex-col justify-between overflow-hidden relative group cursor-default min-h-[240px]"
             >
               {/* Default Mockup View */}
@@ -595,6 +608,7 @@ export default function LandingPage({ onEnterApp }: LandingPageProps) {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               whileHover={{ y: -4 }}
+              onMouseMove={handleMouseMove}
               className="glass-card huly-card-glow p-6 flex flex-col justify-between overflow-hidden relative group cursor-default min-h-[240px]"
             >
               {/* Default Mockup View */}
@@ -662,6 +676,7 @@ export default function LandingPage({ onEnterApp }: LandingPageProps) {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               whileHover={{ y: -4 }}
+              onMouseMove={handleMouseMove}
               className="glass-card huly-card-glow p-6 md:col-span-2 flex flex-col justify-between overflow-hidden relative group cursor-default min-h-[240px]"
             >
               {/* Default Mockup View */}
@@ -849,6 +864,7 @@ export default function LandingPage({ onEnterApp }: LandingPageProps) {
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={onEnterApp}
+              onMouseMove={handleMouseMove}
               className="btn-radiant-glow text-sm py-3.5 px-10 inline-flex items-center gap-2"
             >
               <Sparkles size={15} />
