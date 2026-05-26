@@ -8,6 +8,10 @@ import { syncProfileToSheet } from '@/actions/sheets';
 
 interface SettingsPanelProps {
   userUid: string;
+  onChangeName?: (name: string) => void;
+  onChangeAim?: (aim: string) => void;
+  currentName?: string;
+  currentAim?: string;
 }
 
 // ─── Theme Presets ──────────────────────────────────────────────────────────
@@ -90,8 +94,9 @@ function saveTheme(vars: Record<string, string>) {
   }
 }
 
-export default function SettingsPanel({ userUid }: SettingsPanelProps) {
-  const [name, setName] = useState('');
+export default function SettingsPanel(props: SettingsPanelProps) {
+  const { userUid } = props;
+  const [name, setName] = useState(props.currentName || '');
   const [studentClass, setStudentClass] = useState('');
   const [board, setBoard] = useState('');
   const [school, setSchool] = useState('');
@@ -164,6 +169,11 @@ export default function SettingsPanel({ userUid }: SettingsPanelProps) {
       school,
       aim,
     });
+    
+    // Inform parent component if handlers provided
+    if (props.onChangeName) props.onChangeName(name);
+    if (props.onChangeAim) props.onChangeAim(aim);
+    
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };

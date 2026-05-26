@@ -524,20 +524,21 @@ export default function DashboardPage() {
 
   return (
     <ToastProvider>
-      <div className="h-screen flex bg-grain" style={{ background: 'var(--background)' }}>
-        {/* Ambient background blobs */}
-        <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+      <div className="h-screen flex text-white selection:bg-indigo-500/30 overflow-hidden relative font-sans" style={{ background: '#08080a' }}>
+        {/* Cinematic Ambient Lighting & Noise */}
+        <div className="fixed inset-0 pointer-events-none overflow-hidden z-0 mix-blend-screen">
+          <div className="absolute inset-0 opacity-[0.02]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.85\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")' }}></div>
           <motion.div
-            animate={{ x: [0, 60, -30, 0], y: [0, -40, 25, 0] }}
-            transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
-            className="absolute -top-32 right-0 w-[700px] h-[700px] rounded-full"
-            style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.06), transparent 65%)' }}
+            animate={{ x: [0, 80, -40, 0], y: [0, -60, 40, 0] }}
+            transition={{ duration: 25, repeat: Infinity, ease: 'easeInOut' }}
+            className="absolute -top-64 -right-32 w-[900px] h-[900px] rounded-full blur-[120px]"
+            style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.09), transparent 70%)' }}
           />
           <motion.div
-            animate={{ x: [0, -50, 30, 0], y: [0, 35, -25, 0] }}
-            transition={{ duration: 28, repeat: Infinity, ease: 'easeInOut' }}
-            className="absolute -bottom-32 left-16 w-[600px] h-[600px] rounded-full"
-            style={{ background: 'radial-gradient(circle, rgba(6,182,212,0.05), transparent 65%)' }}
+            animate={{ x: [0, -70, 50, 0], y: [0, 50, -30, 0] }}
+            transition={{ duration: 32, repeat: Infinity, ease: 'easeInOut' }}
+            className="absolute -bottom-64 -left-32 w-[800px] h-[800px] rounded-full blur-[100px]"
+            style={{ background: 'radial-gradient(circle, rgba(6,182,212,0.06), transparent 70%)' }}
           />
         </div>
 
@@ -558,53 +559,62 @@ export default function DashboardPage() {
         />
 
         {/* Main Content */}
-        <main className="flex-1 ml-0 md:ml-[68px] pb-20 md:pb-0 relative z-10">
-          <div className="h-full p-0 md:p-5">
-            <AnimatePresence mode="wait">
-              {activePanel === 'chat' && (
-                <motion.div key="chat" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }} style={{ willChange: 'transform, opacity' }} className="h-full glass-card rounded-none md:rounded-[20px] border-x-0 md:border-x border-t-0 md:border-t p-3 md:p-5">
-                  <ChatPanel userUid={user!.uid} userName={userName} onResponseComplete={handleVayuResponseComplete} />
-                </motion.div>
-              )}
-              {activePanel === 'community' && (
-                <motion.div key="community" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }} style={{ willChange: 'transform, opacity' }} className="h-full glass-card rounded-none md:rounded-[20px] border-x-0 md:border-x border-t-0 md:border-t p-3 md:p-5">
-                  <CommunityPanel 
-                    userUid={user!.uid} 
-                    userName={userName} 
-                    roomUnreadCounts={roomUnreadCounts}
-                    onMarkRoomRead={handleMarkRoomRead}
-                    activeRoomId={activeRoomId}
-                  />
-                </motion.div>
-              )}
-              {activePanel === 'flashforge' && (
-                <motion.div key="flashforge" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }} style={{ willChange: 'transform, opacity' }} className="h-full glass-card rounded-none md:rounded-[20px] border-x-0 md:border-x border-t-0 md:border-t p-3 md:p-5">
-                  <FlashForge userUid={user!.uid} />
-                </motion.div>
-              )}
-              {activePanel === 'pomodoro' && (
-                <motion.div key="pomodoro" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }} style={{ willChange: 'transform, opacity' }} className="h-full glass-card rounded-none md:rounded-[20px] border-x-0 md:border-x border-t-0 md:border-t p-3 md:p-5">
-                  <PomodoroCoach userUid={user!.uid} userName={userName} userAim={userAim} />
-                </motion.div>
-              )}
-              {activePanel === 'flashcards' && (
-                <motion.div key="flashcards" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }} style={{ willChange: 'transform, opacity' }} className="h-full glass-card rounded-none md:rounded-[20px] border-x-0 md:border-x border-t-0 md:border-t p-3 md:p-5">
-                  <FlashcardsPanel userUid={user!.uid} />
-                </motion.div>
-              )}
-              {activePanel === 'bossbattle' && (
-                <motion.div key="bossbattle" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }} style={{ willChange: 'transform, opacity' }} className="h-full glass-card rounded-none md:rounded-[20px] border-x-0 md:border-x border-t-0 md:border-t p-3 md:p-5">
-                  <BossBattlePanel userUid={user!.uid} />
-                </motion.div>
-              )}
-              {activePanel === 'settings' && (
-                <motion.div key="settings" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }} style={{ willChange: 'transform, opacity' }} className="h-full glass-card rounded-none md:rounded-[20px] border-x-0 md:border-x border-t-0 md:border-t p-3 md:p-5">
-                  <SettingsPanel userUid={user!.uid} />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </main>
+        <main className="flex-1 relative z-10 p-3 md:py-6 md:pr-6 md:pl-[100px] flex flex-col h-full overflow-hidden">
+             
+             {/* Shell Header Container (If we want breadcrumbs or extra layout header) - For minimal huly style, we skip and go right to waterfall */}
+              
+             <div className="flex-1 relative w-full h-full object-cover">
+               {/* Huly Waterfall Wrapper Ring */}
+               <div className="absolute inset-0 z-0 pointer-events-none rounded-3xl huly-waterfall-wrap opacity-60 mix-blend-screen scale-[1.002]"></div>
+               
+               {/* Content Inner Border constraints matching huly wraps */}
+               <div className="absolute inset-[1px] md:inset-[1.5px] rounded-3xl overflow-hidden grid shadow-2xl backdrop-blur-[64px]" style={{ gridTemplateColumns: 'minmax(0, 1fr)', gridTemplateRows: 'minmax(0, 1fr)', background: 'rgba(12, 12, 14, 0.75)'}}>
+                <AnimatePresence>
+                {activePanel === 'chat' && (
+                  <motion.div key="chat" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }} style={{ willChange: 'transform, opacity', gridArea: '1/1' }} className="h-full border-none p-3 md:p-6 z-10 w-full overflow-hidden">
+                    <ChatPanel userUid={user!.uid} userName={userName} onResponseComplete={handleVayuResponseComplete} />
+                  </motion.div>
+                )}
+                {activePanel === 'community' && (
+                  <motion.div key="community" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }} style={{ willChange: 'transform, opacity', gridArea: '1/1' }} className="h-full border-none p-3 md:p-6 z-10 w-full overflow-hidden">
+                    <CommunityPanel 
+                      userUid={user!.uid} 
+                      userName={userName} 
+                      roomUnreadCounts={roomUnreadCounts}
+                      onMarkRoomRead={handleMarkRoomRead}
+                      activeRoomId={activeRoomId}
+                    />
+                  </motion.div>
+                )}
+                {activePanel === 'flashforge' && (
+                  <motion.div key="flashforge" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }} style={{ willChange: 'transform, opacity', gridArea: '1/1' }} className="h-full border-none p-3 md:p-6 z-10 w-full overflow-hidden">
+                    <FlashForge userUid={user!.uid} />
+                  </motion.div>
+                )}
+                {activePanel === 'pomodoro' && (
+                  <motion.div key="pomodoro" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }} style={{ willChange: 'transform, opacity', gridArea: '1/1' }} className="h-full border-none p-3 md:p-6 z-10 w-full overflow-hidden">
+                    <PomodoroCoach userUid={user!.uid} userName={userName} userAim={userAim} />
+                  </motion.div>
+                )}
+                {activePanel === 'flashcards' && (
+                  <motion.div key="flashcards" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }} style={{ willChange: 'transform, opacity', gridArea: '1/1' }} className="h-full border-none p-3 md:p-6 z-10 w-full overflow-hidden">
+                    <FlashcardsPanel userUid={user!.uid} />
+                  </motion.div>
+                )}
+                {activePanel === 'bossbattle' && (
+                  <motion.div key="bossbattle" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }} style={{ willChange: 'transform, opacity', gridArea: '1/1' }} className="h-full border-none p-3 md:p-6 z-10 w-full overflow-hidden">
+                    <BossBattlePanel userUid={user!.uid} />
+                  </motion.div>
+                )}
+                {activePanel === 'settings' && (
+                  <motion.div key="settings" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }} style={{ willChange: 'transform, opacity', gridArea: '1/1' }} className="h-full border-none p-3 md:p-6 z-10 w-full overflow-hidden">
+                      <SettingsPanel userUid={user!.uid} onChangeName={(n)=>setUserName(n)} onChangeAim={setUserAim} currentName={userName} currentAim={userAim} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+           </div>
+          </main>
 
         {/* ── Command Palette (Cmd+K) ──────────────────── */}
         <AnimatePresence>

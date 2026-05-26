@@ -58,14 +58,9 @@ export default function Sidebar({
       <aside
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className="hidden md:flex fixed left-0 top-0 bottom-0 flex-col items-stretch py-4 z-50 transition-all duration-300 ease-in-out"
+        className="hidden md:flex fixed left-5 top-5 bottom-5 flex-col items-stretch py-5 z-50 transition-all duration-300 ease-in-out rounded-[24px] overflow-hidden glass-strong huly-waterfall-wrap"
         style={{
-          width: isHovered ? '220px' : '68px',
-          background: 'var(--sidebar-bg)',
-          backdropFilter: 'blur(28px) saturate(140%)',
-          WebkitBackdropFilter: 'blur(28px) saturate(140%)',
-          borderRight: '1px solid var(--sidebar-border)',
-          boxShadow: '4px 0 24px rgba(0, 0, 0, 0.15)',
+          width: isHovered ? '240px' : '72px',
         }}
       >
         {/* Top Header / Orb Section */}
@@ -91,7 +86,7 @@ export default function Sidebar({
 
         {/* Thin separator */}
         <div className="px-4 mb-4">
-          <div className="h-px w-full" style={{ background: 'var(--sidebar-separator)' }} />
+          <div className="h-px w-full bg-white/5" />
         </div>
 
         {/* Nav Items */}
@@ -104,7 +99,7 @@ export default function Sidebar({
                 onClick={() => onPanelChange(item.id)}
                 className="relative w-full flex items-center p-2.5 rounded-lg transition-all duration-200 group border-none cursor-pointer"
                 style={{
-                  background: isActive ? 'rgba(99, 102, 241, 0.08)' : 'transparent',
+                  background: isActive ? 'rgba(255, 255, 255, 0.06)' : 'transparent',
                   color: isActive ? 'var(--foreground)' : 'var(--muted)',
                 }}
               >
@@ -202,7 +197,7 @@ export default function Sidebar({
         {/* Bottom Actions */}
         <div className="flex flex-col gap-2 px-3 pb-2 select-none">
           {/* Thin separator */}
-          <div className="h-px w-full mb-1" style={{ background: 'var(--sidebar-separator)' }} />
+          <div className="h-px w-full mb-1 bg-white/5" />
 
           {/* XP & Streak (Row when expanded, stacked icons when collapsed) */}
           <div className={`flex ${isHovered ? 'flex-row gap-2' : 'flex-col gap-1.5'} items-center justify-between w-full`}>
@@ -333,14 +328,7 @@ export default function Sidebar({
       </aside>
 
       {/* ── Mobile Bottom Nav ─────────────────────────────── */}
-      <nav
-        className="flex md:hidden fixed bottom-0 left-0 right-0 z-50 px-2 py-1.5"
-        style={{
-          background: 'var(--mobile-nav-bg)',
-          backdropFilter: 'blur(24px) saturate(180%)',
-          borderTop: '1px solid var(--sidebar-border)',
-        }}
-      >
+      <nav className="flex md:hidden fixed bottom-0 left-0 right-0 z-50 px-2 py-1.5 glass-strong border-t border-white/5">
         <div className="flex items-center justify-around overflow-x-auto no-scrollbar w-full py-0.5">
           {navItems.map((item) => {
             const isActive = activePanel === item.id;
@@ -351,8 +339,8 @@ export default function Sidebar({
                 onClick={() => onPanelChange(item.id)}
                 className="relative flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-xl flex-shrink-0 transition-colors"
                 style={{
-                  background: isActive ? 'rgba(99, 102, 241, 0.12)' : 'transparent',
-                  color: isActive ? '#818cf8' : 'var(--muted)',
+                  background: isActive ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
+                  color: isActive ? 'var(--foreground)' : 'var(--muted)',
                   border: 'none',
                   cursor: 'pointer',
                   minWidth: '52px',

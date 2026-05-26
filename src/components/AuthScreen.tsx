@@ -247,23 +247,23 @@ export default function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }} /* Premium easing */
         className="relative w-full max-w-md"
       >
         {/* Card */}
-        <div className="glass-strong rounded-2xl p-8">
+        <div className="huly-waterfall-wrap rounded-2xl p-8 bg-[#09090b]">
           {/* Logo */}
-          <div className="flex flex-col items-center mb-6">
-            <VayuOrb size="sm" />
-            <h1 className="text-2xl font-bold mt-4 gradient-text">VidyaVerse</h1>
-            <p className="text-xs mt-1" style={{ color: 'var(--muted)' }}>
-              Your AI-Powered Study Universe
+          <div className="flex flex-col items-center mb-8">
+            <VayuOrb size="md" />
+            <h1 className="text-3xl font-extrabold mt-5 tracking-tight text-white drop-shadow-md">VidyaVerse</h1>
+            <p className="text-sm mt-2 font-medium" style={{ color: 'var(--muted)' }}>
+              Enter your study universe
             </p>
           </div>
 
           {/* Mode Toggle */}
           {mode !== 'onboarding' && (
-            <div className="flex rounded-xl p-1 mb-6" style={{ background: 'var(--surface)' }}>
+            <div className="flex rounded-xl p-1 mb-8" style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
               {(['signup', 'login'] as AuthMode[]).map(m => (
                 <button
                   key={m}

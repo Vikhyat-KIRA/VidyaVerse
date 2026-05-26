@@ -198,11 +198,11 @@ export default function ScoreCard({ userName, userXp, userStreak, onClose }: Sco
         className="w-full max-w-lg"
       >
         {/* Preview */}
-        <div className="rounded-2xl overflow-hidden mb-4" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
+        <div className="rounded-[32px] overflow-hidden mb-4 p-px huly-waterfall-wrap glass-strong">
           {/* Visual preview (HTML, mirrors canvas design) */}
           <div
-            className="relative p-8 overflow-hidden"
-            style={{ background: 'linear-gradient(135deg, #090a0f 0%, #0f1020 100%)', minHeight: 200 }}
+            className="relative p-8 rounded-[31px]"
+            style={{ minHeight: 200 }}
           >
             {/* Dots bg */}
             <div className="absolute inset-0" style={{

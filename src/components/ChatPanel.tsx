@@ -192,13 +192,14 @@ export default function ChatPanel({ userUid, userName, onResponseComplete }: Cha
   };
 
   return (
-    <div className="h-full flex flex-col">
-      {/* ── Header ─────────────────────────────────────────── */}
-      <div
-        className="flex items-center gap-3 pb-3 mb-1"
-        style={{ borderBottom: '1px solid var(--border-color)' }}
-      >
-        <VayuOrb size="sm" isSpeaking={isLoading || isStreaming} isThinking={isLoading} />
+    <div className="h-full flex flex-col w-full h-full relative bg-transparent">
+      <div className="flex flex-col h-full overflow-hidden">
+        {/* ── Header ─────────────────────────────────────────── */}
+        <div
+          className="flex items-center gap-3 pb-3 mb-1 px-4 pt-4 shrink-0"
+          style={{ borderBottom: '1px solid var(--border-color)' }}
+        >
+          <VayuOrb size="sm" isSpeaking={isLoading || isStreaming} isThinking={isLoading} />
         <div className="flex-1 min-w-0">
           <h2 className="text-base font-bold leading-tight" style={{ color: 'var(--foreground)' }}>
             VAYU
@@ -230,7 +231,7 @@ export default function ChatPanel({ userUid, userName, onResponseComplete }: Cha
 
       {/* ── Messages ────────────────────────────────────────── */}
       <div
-        className="flex-1 overflow-y-auto py-3 space-y-1"
+        className="flex-1 overflow-y-auto py-3 px-4 space-y-3"
         style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.06) transparent' }}
         onClick={() => setActiveMsgIdx(null)}
       >
@@ -577,6 +578,7 @@ export default function ChatPanel({ userUid, userName, onResponseComplete }: Cha
             }
           </motion.button>
         </div>
+      </div>
       </div>
     </div>
   );
