@@ -322,6 +322,156 @@ export default function LandingPage({ onEnterApp }: LandingPageProps) {
             />
           </motion.div>
         </motion.div>
+
+        {/* ── Floating Hero Sneak Peeks (lowkey, ambient) ── */}
+
+        {/* Left: VAYU chat bubble */}
+        <motion.div
+          initial={{ opacity: 0, x: -30 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 1.2, duration: 0.8 }}
+          className="absolute left-4 top-1/3 hidden lg:block pointer-events-none z-10"
+        >
+          <motion.div
+            animate={{ y: [0, -8, 0] }}
+            transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+            className="w-52 rounded-xl p-3 space-y-2"
+            style={{
+              background: 'rgba(12,12,15,0.72)',
+              border: '1px solid rgba(99,102,241,0.18)',
+              backdropFilter: 'blur(16px)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.35)',
+              opacity: 0.82,
+            }}
+          >
+            <div className="flex items-center gap-1.5 mb-2">
+              <VayuOrb size="sm" />
+              <span className="text-[9px] font-bold text-white">VAYU</span>
+              <span className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            </div>
+            <div className="bg-zinc-900/70 rounded-lg px-2 py-1.5 text-[8px] text-zinc-300 leading-relaxed">
+              📊 Chapter 4 quiz forged.<br />
+              <span className="text-violet-400 font-bold">+120 XP</span> — defeat the Boss!
+            </div>
+            <div className="flex items-center gap-1.5 bg-violet-950/30 border border-violet-500/15 rounded-lg px-2 py-1 text-[8px] text-violet-300">
+              <span>Yes! Start the quiz</span>
+              <span className="w-1 h-2.5 bg-violet-400 animate-blink ml-auto" />
+            </div>
+          </motion.div>
+        </motion.div>
+
+        {/* Left-lower: XP Streak chip */}
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 1.6, duration: 0.7 }}
+          className="absolute left-6 bottom-1/3 hidden lg:block pointer-events-none z-10"
+        >
+          <motion.div
+            animate={{ y: [0, 6, 0] }}
+            transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+            className="rounded-xl px-3 py-2 flex items-center gap-3"
+            style={{
+              background: 'rgba(12,12,15,0.7)',
+              border: '1px solid rgba(249,115,22,0.18)',
+              backdropFilter: 'blur(14px)',
+              boxShadow: '0 6px 24px rgba(0,0,0,0.3)',
+              opacity: 0.78,
+            }}
+          >
+            <span className="text-base">🔥</span>
+            <div>
+              <p className="text-[9px] font-extrabold text-orange-400">15-Day Streak</p>
+              <p className="text-[7px] text-zinc-500">9,800 XP · Rank #1</p>
+            </div>
+            <div className="w-6 h-6 rounded-full bg-rose-500/20 border border-rose-500/30 flex items-center justify-center">
+              <Trophy size={10} style={{ color: '#f43f5e' }} />
+            </div>
+          </motion.div>
+        </motion.div>
+
+        {/* Right: Pomodoro mini-timer */}
+        <motion.div
+          initial={{ opacity: 0, x: 30 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 1.4, duration: 0.8 }}
+          className="absolute right-4 top-1/3 hidden lg:block pointer-events-none z-10"
+        >
+          <motion.div
+            animate={{ y: [0, -6, 0] }}
+            transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
+            className="w-44 rounded-xl p-3"
+            style={{
+              background: 'rgba(12,12,15,0.72)',
+              border: '1px solid rgba(245,158,11,0.18)',
+              backdropFilter: 'blur(16px)',
+              boxShadow: '0 8px 28px rgba(0,0,0,0.35)',
+              opacity: 0.80,
+            }}
+          >
+            <div className="flex items-center justify-between mb-2.5">
+              <span className="text-[9px] font-bold text-amber-400 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ring inline-block" />
+                Focus Mode
+              </span>
+              <span className="text-[8px] font-mono text-zinc-500">1 of 4</span>
+            </div>
+            {/* Mini SVG ring */}
+            <div className="flex items-center justify-center relative">
+              <svg className="w-14 h-14" viewBox="0 0 56 56">
+                <circle cx="28" cy="28" r="22" fill="none" stroke="rgba(245,158,11,0.1)" strokeWidth="3" />
+                <circle cx="28" cy="28" r="22" fill="none" stroke="url(#pg)" strokeWidth="3"
+                  strokeDasharray="138" strokeDashoffset="20" strokeLinecap="round"
+                  style={{ transformOrigin: '50% 50%', transform: 'rotate(-90deg)' }} />
+                <defs>
+                  <linearGradient id="pg" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor="#f59e0b" />
+                    <stop offset="100%" stopColor="#ef4444" />
+                  </linearGradient>
+                </defs>
+              </svg>
+              <div className="absolute text-center">
+                <p className="text-[11px] font-mono font-bold text-white leading-none">24:12</p>
+                <p className="text-[6px] text-amber-400 uppercase tracking-wider">studying</p>
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+
+        {/* Right-lower: Flashcard flip chip */}
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 1.8, duration: 0.7 }}
+          className="absolute right-6 bottom-1/3 hidden lg:block pointer-events-none z-10"
+        >
+          <motion.div
+            animate={{ y: [0, 8, 0] }}
+            transition={{ duration: 5.5, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+            className="w-48 rounded-xl p-3 space-y-1.5"
+            style={{
+              background: 'rgba(12,12,15,0.70)',
+              border: '1px solid rgba(52,211,153,0.18)',
+              backdropFilter: 'blur(14px)',
+              boxShadow: '0 6px 24px rgba(0,0,0,0.3)',
+              opacity: 0.78,
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[8px] font-bold text-emerald-400 uppercase tracking-wider">Flash·Forge</span>
+              <span className="text-[7px] text-zinc-500 font-mono">Box 2 → 3</span>
+            </div>
+            <div className="bg-zinc-900/60 rounded-lg p-2 text-center border border-zinc-800/40">
+              <p className="text-[8px] text-zinc-400 mb-0.5">What is mitochondria?</p>
+              <p className="text-[7px] text-emerald-400 font-semibold">Powerhouse of the cell ⚡</p>
+            </div>
+            <div className="flex gap-1 pt-0.5">
+              <div className="flex-1 bg-red-950/20 border border-red-500/15 rounded text-center py-0.5 text-[7px] text-red-400">Forgot</div>
+              <div className="flex-1 bg-emerald-950/20 border border-emerald-500/15 rounded text-center py-0.5 text-[7px] text-emerald-400">Got it ✓</div>
+            </div>
+          </motion.div>
+        </motion.div>
+
       </section>
 
       {/* ══════════════ STATS BAR ══════════════ */}
