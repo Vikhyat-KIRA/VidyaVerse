@@ -322,7 +322,7 @@ export default function LandingPage({ onEnterApp }: LandingPageProps) {
         </div>
       </section>
 
-      {/* ══════════════ FEATURES GRID ══════════════ */}
+      {/* ══════════════ FEATURES BENTO GRID ══════════════ */}
       <section className="relative z-10 py-16 md:py-24 px-4">
         <div className="max-w-6xl mx-auto">
           {/* Section Header */}
@@ -340,40 +340,172 @@ export default function LandingPage({ onEnterApp }: LandingPageProps) {
             </p>
           </motion.div>
 
-          {/* Feature Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
-            {FEATURES.map((f, i) => {
-              const Icon = f.icon;
-              return (
-                <motion.div
-                  key={f.title}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.08, duration: 0.5 }}
-                  whileHover={{ y: -4, transition: { duration: 0.2 } }}
-                  className="glass-card p-5 md:p-6 group cursor-default"
-                >
-                  {/* Icon */}
-                  <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110"
-                    style={{
-                      background: `${f.color}15`,
-                      border: `1px solid ${f.color}30`,
-                    }}
-                  >
-                    <Icon size={18} style={{ color: f.color }} />
-                  </div>
+          {/* Bento Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {/* Card 1: VAYU AI Mentor (spans 2 columns) */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              whileHover={{ y: -4 }}
+              className="glass-card p-6 md:col-span-2 flex flex-col justify-between overflow-hidden relative group cursor-default min-h-[220px]"
+            >
+              <div className="absolute -right-6 -bottom-6 opacity-20 group-hover:opacity-30 transition-opacity duration-300 pointer-events-none">
+                <VayuOrb size="md" />
+              </div>
+              <div className="relative z-10">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-105" style={{ background: '#6c63ff15', border: '1px solid #6c63ff30' }}>
+                  <MessageCircle size={18} style={{ color: '#6c63ff' }} />
+                </div>
+                <h3 className="text-base font-bold mb-2 text-white">VAYU — AI Study Mentor</h3>
+                <p className="text-xs text-[var(--muted)] leading-relaxed max-w-md">
+                  Context-aware intelligence that understands your unique academic background. VAYU reads connected study records in real-time, tailoring custom revision routes and quizzes specifically for you.
+                </p>
+              </div>
+              <div className="mt-6 p-3 rounded-lg border border-zinc-800/40 bg-zinc-900/30 font-mono text-[9px] text-zinc-400 space-y-1 relative z-10 max-w-md transition-all duration-300 group-hover:border-violet-500/20 group-hover:bg-violet-950/5">
+                <div className="flex items-center gap-1.5 text-zinc-500"><span>&gt;</span><span>vayu --analyze current-learning-curve</span></div>
+                <div className="text-violet-400 flex items-center gap-0.5">
+                  <span>Analysis: Leitner Box 2 needs review. Generating custom flashcards...</span>
+                  <span className="w-1 h-3 bg-violet-400 animate-blink" />
+                </div>
+              </div>
+            </motion.div>
 
-                  <h3 className="text-sm font-bold mb-1.5" style={{ color: 'var(--foreground)' }}>
-                    {f.title}
-                  </h3>
-                  <p className="text-xs leading-relaxed" style={{ color: 'var(--muted)' }}>
-                    {f.desc}
-                  </p>
-                </motion.div>
-              );
-            })}
+            {/* Card 2: Private 1-on-1 DMs */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              whileHover={{ y: -4 }}
+              className="glass-card p-6 flex flex-col justify-between overflow-hidden relative group cursor-default min-h-[220px]"
+            >
+              <div>
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-105" style={{ background: '#00f0ff15', border: '1px solid #00f0ff30' }}>
+                  <Users size={18} style={{ color: '#00f0ff' }} />
+                </div>
+                <h3 className="text-base font-bold mb-2 text-white">Private DMs</h3>
+                <p className="text-xs text-[var(--muted)] leading-relaxed">
+                  End-to-end invite room codes that automatically self-destruct from discovery index once your peer joins. Auto-locking.
+                </p>
+              </div>
+              <div className="mt-6 flex flex-col gap-2">
+                <div className="flex items-center gap-2 p-2 rounded border border-zinc-800/40 bg-zinc-900/20 transition-all duration-300 group-hover:border-cyan-500/25 group-hover:bg-cyan-950/10">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-[10px] font-mono text-zinc-400 flex-1">Room: #7X829B (Locked)</span>
+                  <span className="text-xs transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12">🔒</span>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Card 3: Spaced Repetition */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              whileHover={{ y: -4 }}
+              className="glass-card p-6 flex flex-col justify-between overflow-hidden relative group cursor-default min-h-[220px]"
+            >
+              <div>
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-105" style={{ background: '#34d39915', border: '1px solid #34d39930' }}>
+                  <Zap size={18} style={{ color: '#34d399' }} />
+                </div>
+                <h3 className="text-base font-bold mb-2 text-white">Spaced Repetition</h3>
+                <p className="text-xs text-[var(--muted)] leading-relaxed">
+                  Conquer the forgetting curve using our optimized Leitner-system spaced repetition engine.
+                </p>
+              </div>
+              <div className="mt-6 flex items-end gap-1.5 font-mono text-[9px] pl-1">
+                <div className="w-8 h-8 rounded border border-zinc-800/50 bg-zinc-900/30 flex flex-col items-center justify-center text-zinc-500 transition-all duration-300 group-hover:translate-y-[-2px]">Box 1</div>
+                <div className="w-8 h-10 rounded border border-zinc-700/50 bg-zinc-900/60 flex flex-col items-center justify-center text-zinc-400 transition-all duration-300 group-hover:translate-y-[-4px] group-hover:border-zinc-500">Box 2</div>
+                <div className="w-8 h-12 rounded border border-emerald-500/20 bg-emerald-500/5 flex flex-col items-center justify-center text-emerald-400 transition-all duration-300 group-hover:translate-y-[-6px] group-hover:border-emerald-500/40 group-hover:shadow-[0_0_12px_rgba(16,185,129,0.15)]">Box 3</div>
+              </div>
+            </motion.div>
+
+            {/* Card 4: Pomodoro Audio Coach */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              whileHover={{ y: -4 }}
+              className="glass-card p-6 flex flex-col justify-between overflow-hidden relative group cursor-default min-h-[220px]"
+            >
+              <div>
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-105" style={{ background: '#f59e0b15', border: '1px solid #f59e0b30' }}>
+                  <Timer size={18} style={{ color: '#f59e0b' }} />
+                </div>
+                <h3 className="text-base font-bold mb-2 text-white">Pomodoro Coach</h3>
+                <p className="text-xs text-[var(--muted)] leading-relaxed">
+                  Glassmorphic timer with smart interactive voice interruptions to bring you back to deep focus intervals.
+                </p>
+              </div>
+              <div className="mt-6 flex items-center justify-between font-mono text-[10px] text-zinc-400 px-1 relative">
+                <span className="text-amber-500 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ring" />
+                  ● Focus Mode
+                </span>
+                <span className="font-bold text-white text-xs group-hover:text-amber-400 transition-colors duration-300">25:00</span>
+              </div>
+            </motion.div>
+
+            {/* Card 5: Leaderboards & XP */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              whileHover={{ y: -4 }}
+              className="glass-card p-6 flex flex-col justify-between overflow-hidden relative group cursor-default min-h-[220px]"
+            >
+              <div>
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-105" style={{ background: '#f43f5e15', border: '1px solid #f43f5e30' }}>
+                  <Trophy size={18} style={{ color: '#f43f5e' }} />
+                </div>
+                <h3 className="text-base font-bold mb-2 text-white">Leaderboards & XP</h3>
+                <p className="text-xs text-[var(--muted)] leading-relaxed">
+                  Earn XP, maintain daily study streaks, and climb ranks globally. Climb from Rookie to Scholar.
+                </p>
+              </div>
+              <div className="mt-6 space-y-1 font-mono text-[9px] text-zinc-400 w-full">
+                <div className="flex justify-between items-center bg-zinc-900/30 p-1 px-2 rounded border border-zinc-800/20 transition-all duration-300 group-hover:bg-rose-950/5 group-hover:border-rose-500/20 group-hover:translate-x-1">
+                  <span className="flex items-center gap-1">🥇 Vikhyat</span>
+                  <span className="text-rose-400 font-bold transition-all duration-300 group-hover:scale-105">9,500 XP</span>
+                </div>
+                <div className="flex justify-between items-center bg-zinc-900/10 p-1 px-2 rounded transition-all duration-300 group-hover:translate-x-0.5">
+                  <span>🥈 Emily</span>
+                  <span className="text-zinc-500">8,200 XP</span>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Card 6: Flash-Forge Vision (spans 2 columns) */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              whileHover={{ y: -4 }}
+              className="glass-card p-6 md:col-span-2 flex flex-col justify-between overflow-hidden relative group cursor-default min-h-[220px]"
+            >
+              <div className="relative z-10">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-105" style={{ background: '#a855f715', border: '1px solid #a855f730' }}>
+                  <Image size={18} style={{ color: '#a855f7' }} />
+                </div>
+                <h3 className="text-base font-bold mb-2 text-white">Flash-Forge Vision</h3>
+                <p className="text-xs text-[var(--muted)] leading-relaxed max-w-md">
+                  Upload PDF screenshots, study slides, or textbook photos. Our multimodal visual engine parses them instantly, delivering step-by-step mathematical explanations, core concepts, and auto-forging flashcards.
+                </p>
+              </div>
+              <div className="mt-6 p-3 rounded-lg border border-zinc-800/40 bg-zinc-900/30 flex items-center justify-between text-[9px] font-mono text-zinc-400 relative z-10 overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-purple-500/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out pointer-events-none" />
+                <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div className="absolute left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-purple-500 to-transparent shadow-[0_0_8px_rgba(168,85,247,0.5)] animate-laser" />
+                </div>
+                <div className="flex items-center gap-2 relative z-10">
+                  <span className="text-purple-400">📊 textbook_chapter4.png</span>
+                  <span className="text-zinc-600">|</span>
+                  <span>1.2 MB</span>
+                </div>
+                <span className="text-emerald-400 font-medium relative z-10 transition-all duration-300 group-hover:scale-105">OCR Parsed & Deck Forged ⚡</span>
+              </div>
+            </motion.div>
           </div>
         </div>
       </section>

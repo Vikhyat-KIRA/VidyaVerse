@@ -614,41 +614,42 @@ export default function DashboardPage() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="fixed inset-0 z-[9998] flex items-start justify-center pt-[15vh]"
-              style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}
+              style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(12px)' }}
               onClick={() => setShowCommandPalette(false)}
             >
               <motion.div
-                initial={{ opacity: 0, y: -12, scale: 0.97 }}
+                initial={{ opacity: 0, y: -12, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -12, scale: 0.97 }}
+                exit={{ opacity: 0, y: -12, scale: 0.98 }}
                 transition={{ type: 'spring', stiffness: 500, damping: 40 }}
-                className="w-full max-w-sm rounded-2xl overflow-hidden"
-                style={{ border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(9,10,15,0.96)', backdropFilter: 'blur(40px)', boxShadow: '0 24px 64px rgba(0,0,0,0.5)' }}
+                className="w-full max-w-sm rounded-xl overflow-hidden"
+                style={{ border: '1px solid var(--border-color)', background: 'rgba(18, 18, 20, 0.98)', backdropFilter: 'blur(32px)', boxShadow: '0 24px 64px rgba(0,0,0,0.6)' }}
                 onClick={e => e.stopPropagation()}
               >
-                <div className="px-4 pt-4 pb-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                  <p className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>Switch Panel</p>
+                <div className="px-4 pt-4 pb-2 flex items-center justify-between" style={{ borderBottom: '1px solid var(--sidebar-separator)' }}>
+                  <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>Command Menu</p>
+                  <span className="text-[9px] font-mono opacity-50 px-1 py-0.5 rounded border" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>⌘K</span>
                 </div>
                 <div className="py-2">
                   {PANEL_LIST.map((p) => (
                     <button
                       key={p.id}
                       onClick={() => { setActivePanel(p.id); setShowCommandPalette(false); }}
-                      className="w-full flex items-center justify-between px-4 py-2.5 transition-colors text-left"
+                      className="w-full flex items-center justify-between px-4 py-2.5 transition-all text-left border-none"
                       style={{
-                        background: activePanel === p.id ? 'rgba(99,102,241,0.1)' : 'transparent',
-                        color: activePanel === p.id ? '#818cf8' : 'var(--foreground)',
-                        border: 'none', cursor: 'pointer',
+                        background: activePanel === p.id ? 'rgba(99,102,241,0.08)' : 'transparent',
+                        color: activePanel === p.id ? 'var(--foreground)' : 'var(--muted)',
+                        cursor: 'pointer',
                       }}
                     >
-                      <span className="text-sm font-medium">{p.label}</span>
-                      <kbd className="text-[10px] px-1.5 py-0.5 rounded font-mono" style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--muted)', border: '1px solid rgba(255,255,255,0.06)' }}>{p.shortcut}</kbd>
+                      <span className="text-xs font-semibold">{p.label}</span>
+                      <kbd className="text-[9px] px-1.5 py-0.5 rounded font-mono" style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--muted)', border: '1px solid rgba(255,255,255,0.05)' }}>{p.shortcut}</kbd>
                     </button>
                   ))}
                 </div>
-                <div className="px-4 py-2.5 flex items-center justify-between" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                  <span className="text-[10px]" style={{ color: 'var(--muted)' }}>Press number key to jump</span>
-                  <kbd className="text-[10px] px-1.5 py-0.5 rounded font-mono" style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--muted)', border: '1px solid rgba(255,255,255,0.06)' }}>Esc</kbd>
+                <div className="px-4 py-2.5 flex items-center justify-between" style={{ borderTop: '1px solid var(--sidebar-separator)' }}>
+                  <span className="text-[9px]" style={{ color: 'var(--muted)' }}>Select or press number keys to jump</span>
+                  <kbd className="text-[9px] px-1.5 py-0.5 rounded font-mono" style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--muted)', border: '1px solid rgba(255,255,255,0.05)' }}>Esc</kbd>
                 </div>
               </motion.div>
             </motion.div>
@@ -660,12 +661,12 @@ export default function DashboardPage() {
           <div className="fixed top-4 right-4 z-[999] flex flex-col items-end">
             <button
               onClick={() => setShowNotificationsDropdown(p => !p)}
-              className="relative p-2.5 rounded-xl border transition-all duration-300 cursor-pointer hover:scale-105 active:scale-95 flex items-center justify-center"
+              className="relative p-2.5 rounded-lg border transition-all duration-300 cursor-pointer hover:scale-102 active:scale-98 flex items-center justify-center"
               style={{
-                background: 'rgba(255, 255, 255, 0.03)',
+                background: 'rgba(18, 18, 20, 0.7)',
                 borderColor: 'var(--border-color)',
                 backdropFilter: 'blur(20px)',
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.25)',
                 color: 'var(--foreground)'
               }}
             >
@@ -678,7 +679,7 @@ export default function DashboardPage() {
                 strokeWidth="2.2" 
                 strokeLinecap="round" 
                 strokeLinejoin="round" 
-                className={`w-5 h-5 ${totalUnreadNotifications > 0 ? 'animate-bounce text-[var(--primary)]' : 'text-[var(--muted)]'}`}
+                className={`w-4 h-4 ${totalUnreadNotifications > 0 ? 'animate-bounce text-[var(--primary)]' : 'text-[var(--muted)]'}`}
                 style={{
                   filter: totalUnreadNotifications > 0 ? 'drop-shadow(0 0 8px var(--primary-glow))' : 'none'
                 }}
@@ -690,7 +691,7 @@ export default function DashboardPage() {
               {/* Pulsing Badge */}
               {totalUnreadNotifications > 0 && (
                 <span 
-                  className="absolute -top-1 -right-1 min-w-[15px] h-[15px] px-0.5 rounded-full text-[8px] font-extrabold flex items-center justify-center text-white"
+                  className="absolute -top-1 -right-1 min-w-[14px] h-[14px] px-0.5 rounded-full text-[8px] font-extrabold flex items-center justify-center text-white"
                   style={{
                     background: 'var(--primary)',
                     boxShadow: '0 0 8px var(--primary-glow)',
@@ -709,22 +710,22 @@ export default function DashboardPage() {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 12, scale: 0.96 }}
                   transition={{ type: 'spring', stiffness: 450, damping: 35 }}
-                  className="mt-3 w-80 rounded-2xl overflow-hidden shadow-2xl flex flex-col"
+                  className="mt-3 w-80 rounded-xl overflow-hidden shadow-2xl flex flex-col"
                   style={{
-                    background: 'rgba(9, 10, 15, 0.95)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
-                    backdropFilter: 'blur(40px)',
+                    background: 'rgba(18, 18, 20, 0.98)',
+                    border: '1px solid var(--border-color)',
+                    backdropFilter: 'blur(32px)',
                     maxHeight: '400px',
                     boxShadow: '0 20px 50px rgba(0,0,0,0.5)'
                   }}
                 >
                   {/* Dropdown Header */}
-                  <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}>
-                    <h4 className="text-xs font-bold text-white flex items-center gap-1.5 uppercase tracking-wider">
+                  <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: 'var(--sidebar-separator)' }}>
+                    <h4 className="text-[10px] font-bold text-white flex items-center gap-1.5 uppercase tracking-wider">
                       Inbox
                       {totalUnreadNotifications > 0 && (
                         <span 
-                          className="text-[9px] font-black px-2 py-0.5 rounded-full text-white"
+                          className="text-[8px] font-black px-2 py-0.5 rounded-full text-white"
                           style={{
                             background: 'var(--primary)',
                             boxShadow: '0 0 6px var(--primary-glow)'
@@ -737,7 +738,7 @@ export default function DashboardPage() {
                     {notifications.length > 0 && (
                       <button 
                         onClick={handleMarkAllAsRead}
-                        className="text-[10px] font-extrabold text-[var(--primary)] hover:underline border-none bg-transparent cursor-pointer"
+                        className="text-[9px] font-extrabold text-[var(--primary)] hover:underline border-none bg-transparent cursor-pointer"
                       >
                         Clear All
                       </button>
