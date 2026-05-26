@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import HulyClock from './HulyClock';
 import { motion } from 'framer-motion';
 import {
   Sparkles, MessageCircle, Users, Zap, Timer, Image, Trophy,
@@ -972,37 +973,7 @@ export default function LandingPage({ onEnterApp }: LandingPageProps) {
             viewport={{ once: true }}
             className="flex justify-center md:justify-end"
           >
-            <div className="huly-clock-dial scale-[1.1] md:mr-8 select-none">
-              {/* Watch Crown on the right side */}
-              <div className="absolute right-[-7px] top-[calc(50%-10px)] w-[8px] h-[20px] bg-zinc-700 rounded-[2px] border border-zinc-950 shadow-md" />
-              
-              {/* Subtle watch dial texture grid */}
-              <div className="absolute inset-[15px] rounded-full opacity-[0.06] bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.85)_1px,transparent_0)] bg-[size:10px_10px] pointer-events-none" />
-              
-              {/* Subtle cross / shield brand watermark in center */}
-              <div className="absolute w-[60px] h-[60px] opacity-[0.12] flex items-center justify-center pointer-events-none">
-                <div className="w-[32px] h-[32px] border-[6px] border-white rounded-[6px] rotate-45" />
-              </div>
-
-              {/* Luminous high-tech markers */}
-              <span className="absolute top-[18px] text-[8px] text-zinc-500 font-extrabold tracking-wider">12</span>
-              <span className="absolute right-[44px] top-[26px] text-[8px] text-zinc-600 font-extrabold tracking-wider">1</span>
-              <span className="absolute right-[24px] top-[48px] text-[8px] text-zinc-600 font-extrabold tracking-wider">2</span>
-              <span className="absolute right-[18px] top-[calc(50%-5px)] text-[8px] text-zinc-600 font-extrabold tracking-wider">3</span>
-              <span className="absolute right-[24px] bottom-[48px] text-[8px] text-zinc-600 font-extrabold tracking-wider">4</span>
-              <span className="absolute left-[24px] bottom-[48px] text-[8px] text-zinc-600 font-extrabold tracking-wider">8</span>
-              <span className="absolute left-[18px] top-[calc(50%-5px)] text-[8px] text-zinc-600 font-extrabold tracking-wider">9</span>
-              <span className="absolute left-[24px] top-[48px] text-[8px] text-zinc-600 font-extrabold tracking-wider">10</span>
-
-              {/* Glow Arc Layer */}
-              <div className="huly-clock-glow-arc" />
-              
-              {/* Hands and Center Pin */}
-              <div className="huly-clock-center-pin" />
-              <div className="huly-clock-hand huly-clock-hand-hour" />
-              <div className="huly-clock-hand huly-clock-hand-minute" />
-              <div className="huly-clock-hand huly-clock-hand-second" />
-            </div>
+            <HulyClock />
           </motion.div>
 
           {/* Right Column: Title text & Start actions */}
