@@ -38,22 +38,16 @@ function renderMarkdown(text: string): string {
 }
 
 export default function ChatPanel({ userUid, userName, onResponseComplete }: ChatPanelProps) {
-  const [messages, setMessages] = useState<LocalChatMessage[]>([
+  const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: 'assistant',
-      content: `🔥 **Yo ${userName}! Welcome to VidyaVerse!**\n\nI'm VAYU — your AI study buddy, mentor, and the voice in your head that won't let you slack off.\n\nHere's what we can accomplish in this workspace:\n- 💬 Resolve any academic hurdles instantly\n- 📄 Audit textbook materials, lecture slides, and notes\n- 📸 Forge flashcards from visual equations (via Flash-Forge)\n- ⏱️ Force productive sprints in Pomodoro Co-op\n\n*Drop a question or attach your study files below and let's get after it!*`,
+      content: `🔥 **Yo ${userName}! Welcome to VidyaVerse!**\n\nI'm VAYU — your AI study buddy, mentor, and the voice in your head that won't let you slack off.\n\nHere's what I can do:\n- 💬 Answer ANY academic question\n- 📄 Read PDFs, Word docs, and PowerPoints\n- 📸 Analyze textbook pages & circuits (use Flash-Forge)\n- ⏱️ Keep you focused with the Pomodoro Coach\n\n*So what are we working on today? Drop a question or a document and let's get started!*`,
       timestamp: Date.now(),
     },
   ]);
-  const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
-  const [attachedFile, setAttachedFile] = useState<AttachedFile | null>(null);
-  const [replyingTo, setReplyingTo] = useState<{ idx: number; content: string; role: 'user' | 'assistant' } | null>(null);
-  const [activeMsgIdx, setActiveMsgIdx] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -63,45 +57,25 @@ export default function ChatPanel({ userUid, userName, onResponseComplete }: Cha
     scrollToBottom();
   }, [messages]);
 
-  useEffect(() => {
-    const ta = textareaRef.current;
-    if (!ta) return;
-    ta.style.height = 'auto';
-    ta.style.height = Math.min(ta.scrollHeight, 120) + 'px';
-  }, [input]);
+  const handleSend = async (text: string, file: AttachedFile | null) => {
+    if (isLoading || (!text.trim() && !file)) return;
 
-  const handleSend = async () => {
-    if (isLoading || (!input.trim() && !attachedFile)) return;
-
-    const replyMeta = replyingTo
-      ? { replyToContent: replyingTo.content, replyToRole: replyingTo.role }
-      : {};
-
-    const userMessage: LocalChatMessage = {
+    const userMessage: ChatMessage = {
       role: 'user',
-      content: input.trim() + (attachedFile ? `\n[Attached File: ${attachedFile.file.name}]` : ''),
-      imageUrl: attachedFile?.previewUrl || undefined,
+      content: text.trim() + (file ? `\n[Attached File: ${file.file.name}]` : ''),
+      imageUrl: file?.previewUrl || undefined,
       timestamp: Date.now(),
-      ...replyMeta,
     };
 
     setMessages(prev => [...prev, userMessage]);
-    setReplyingTo(null);
-    setActiveMsgIdx(null);
-
-    const currentInput = input;
-    const currentAttachment = attachedFile;
-
-    setInput('');
-    setAttachedFile(null);
     setIsLoading(true);
 
     try {
       const formData = new FormData();
       formData.append('uid', userUid);
-      formData.append('message', currentInput || (currentAttachment ? `Please analyze this attached file: ${currentAttachment.file.name}` : ''));
-      if (currentAttachment) {
-        formData.append('file', currentAttachment.file);
+      formData.append('message', text.trim() || (file ? `Please analyze this attached file: ${file.file.name}` : ''));
+      if (file) {
+        formData.append('file', file.file);
       }
 
       const res = await fetch('/api/chat', {
@@ -118,7 +92,7 @@ export default function ChatPanel({ userUid, userName, onResponseComplete }: Cha
         role: 'assistant',
         content: '',
         timestamp: Date.now(),
-      } as LocalChatMessage]);
+      }]);
 
       setIsLoading(false);
       setIsStreaming(true);
@@ -129,8 +103,8 @@ export default function ChatPanel({ userUid, userName, onResponseComplete }: Cha
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        const text = decoder.decode(value, { stream: true });
-        streamedResponse += text;
+        const textChunk = decoder.decode(value, { stream: true });
+        streamedResponse += textChunk;
 
         setMessages(prev => {
           const newMessages = [...prev];
@@ -145,7 +119,7 @@ export default function ChatPanel({ userUid, userName, onResponseComplete }: Cha
     } catch {
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: '⚠️ Oops, encountered a stream glitch. Let&apos;s try again!',
+        content: '⚠️ Oops, had a hiccup. Please try again!',
         timestamp: Date.now(),
       }]);
     } finally {
@@ -154,41 +128,10 @@ export default function ChatPanel({ userUid, userName, onResponseComplete }: Cha
     }
   };
 
-  const handleFileAttach = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const isImage = file.type.startsWith('image/');
-
-    if (isImage) {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        setAttachedFile({
-          file,
-          previewUrl: ev.target?.result as string,
-          isImage: true
-        });
-      };
-      reader.readAsDataURL(file);
-    } else {
-      setAttachedFile({
-        file,
-        previewUrl: null,
-        isImage: false
-      });
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
+  const visibleMessages = messages.slice(-20);
 
   return (
-    <div className="h-full flex flex-col w-full relative bg-transparent overflow-hidden">
-      {/* ── Dynamic Header ── */}
+    <div className="h-full flex flex-col w-full relative bg-transparent overflow-hidden pb-20 md:pb-0">
       <div className="flex items-center gap-3 py-3 px-4 shrink-0 border-b border-sys-groove bg-zinc-950/10">
         <VayuOrb size="sm" isSpeaking={isLoading || isStreaming} isThinking={isLoading} />
         <div className="flex-1 min-w-0">
@@ -198,24 +141,10 @@ export default function ChatPanel({ userUid, userName, onResponseComplete }: Cha
             <span>{isLoading ? 'ANALYZING CONTEXT...' : isStreaming ? 'STREAMS COMMITTED' : 'SYSTEM LINK ACTIVE'}</span>
           </div>
         </div>
-        <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-purple-950/40 border border-purple-500/20 text-[9px] font-mono font-bold text-purple-400">
-          <Sparkles size={10} /> GEMINI_1.5_PRO
-        </div>
       </div>
 
-      {/* ── High Density Flat Block Messages ── */}
-      <div 
-        className="flex-1 overflow-y-auto py-4 px-4 space-y-4 no-scrollbar bg-black/10"
-        onClick={() => setActiveMsgIdx(null)}
-      >
+      <div className="flex-1 overflow-y-auto py-4 px-4 space-y-4 no-scrollbar bg-black/10">
         <AnimatePresence initial={false}>
-          {messages.map((msg, idx) => {
-            const isUser = msg.role === 'user';
-            const isActive = activeMsgIdx === idx;
-            const timeStr = new Date(msg.timestamp).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit' });
-
-            return (
-              <div 
                 key={idx}
                 className="group relative flex gap-3.5 items-start py-3 border-b border-sys-groove/30 hover:bg-zinc-900/10 px-2 rounded-[2px] transition-colors duration-150"
                 onMouseEnter={() => setActiveMsgIdx(idx)}
